@@ -9,7 +9,7 @@ except ImportError:
 
 def get_version():
     regex = r"""__version__\s+=\s+(?P<quote>['"])(?P<version>.+?)(?P=quote)"""
-    with io.open('aioelasticsearch/__ini__.py', mode='rt', encoding='utf-8') as fp:  # noqa
+    with io.open('aioelasticsearch/__init__.py', mode='rt', encoding='utf-8') as fp:  # noqa
         return re.search(regex, fp.read()).group('version')
 
 
