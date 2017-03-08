@@ -18,9 +18,7 @@ from .pool import AIOHttpConnectionPool, DummyConnectionPool
 logger = logging.getLogger('elasticsearch')
 
 
-class AIOHttpTransport(
-    Transport,
-):
+class AIOHttpTransport(Transport):
 
     def __init__(
         self,

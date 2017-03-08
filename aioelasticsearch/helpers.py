@@ -18,6 +18,7 @@ def create_future(*, loop=None):
 
 
 class Scan:
+
     def __init__(
         self,
         es,

@@ -13,6 +13,9 @@ from .pool import AIOHttpConnectionPool  # noqa # isort:skip
 from .transport import AIOHttpTransport  # isort:skip
 
 
+__version__ = '0.0.1'
+
+
 class Elasticsearch(_Elasticsearch):
 
     def __init__(
