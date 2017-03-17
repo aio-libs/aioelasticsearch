@@ -20,6 +20,7 @@ Usage
 -----
 
 .. code-block:: python
+
     import asyncio
 
     from aioelasticsearch import Elasticsearch
