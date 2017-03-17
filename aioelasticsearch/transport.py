@@ -189,6 +189,7 @@ class AIOHttpTransport(Transport):
         return asyncio.gather(
             _initial_sniff_wrapper(),
             self.connection_pool.close(),
+            return_exceptions=True,
             loop=self.loop,
         )
 

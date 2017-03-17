@@ -124,7 +124,7 @@ class AIOHttpConnectionPool:
             _, connection = self.dead.get_nowait()
             coros.append(connection.close())
 
-        return asyncio.gather(*coros, loop=self.loop)
+        return asyncio.gather(*coros, return_exceptions=True, loop=self.loop)
 
 
 class DummyConnectionPool(AIOHttpConnectionPool):
