@@ -11,6 +11,10 @@ python:
   - "3.6"
 install:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.2.2.deb && sudo dpkg -i --force-confnew elasticsearch-5.2.2.deb && sudo service elasticsearch start
+  - pip install -U setuptools
+  - pip install -U pip
+  - pip install -U wheel
+  - pip install -U tox
 before_script:
   # slow elasticsearch service
   - echo 'waiting for elasticsearch is up'; while ! curl --output /dev/null --silent --head --fail http://127.0.0.1:9200; do sleep 1; echo -n '.'; done
