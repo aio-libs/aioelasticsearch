@@ -32,9 +32,9 @@ setup(
         'elasticsearch>=5',
         'aiohttp>=1.3,<2.0',
     ],
-    py_modules=['aioelasticsearch'],
-    zip_safe=False,
+    packages=['aioelasticsearch'],
     include_package_data=True,
+    zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -48,4 +48,5 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
+    keywords=['elasticsearch', 'asyncio', 'aiohttp'],
 )
