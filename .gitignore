@@ -8,6 +8,8 @@ dist/*
 MANIFEST
 __pycache__/
 *.egg-info/
+.coverage
+htmlcov
 
 # generic files to ignore
 *~
