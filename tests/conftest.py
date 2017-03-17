@@ -27,6 +27,18 @@ def loop(request):
 def es(loop):
     es = Elasticsearch(loop=loop)
 
+    delete_template = es.transport.perform_request(
+        'DELETE',
+        '/_template/*',
+    )
+    delete_all = es.transport.perform_request(
+        'DELETE',
+        '/_all',
+    )
+    coros = [delete_template, delete_all]
+    coro = asyncio.gather(*coros, loop=loop)
+    loop.run_until_complete(coro)
+
     try:
         yield es
     finally:
