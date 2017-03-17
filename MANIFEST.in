@@ -1,5 +1,4 @@
 include README.rst LICENSE
 include setup.py
-recursive-include aioelasticsearch *.py
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
