@@ -20,31 +20,47 @@ Usage
 -----
 
 .. code-block:: python
+    import asyncio
 
     from aioelasticsearch import Elasticsearch
 
-    es = Elasticsearch()
+    async def go():
+        es = Elasticsearch()
 
-    # es...
+        print(await es.search())
 
-    await es.close()  # is a MUST!
+        await es.close()
 
-Additions
----------
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(go())
+    loop.close()
+
+Features
+--------
+
+Asynchronous _`scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`
 
 .. code-block:: python
+
+    import asyncio
 
     from aioelasticsearch import Elasticsearch
     from aioelasticsearch.helpers import Scan
 
-    es = Elasticsearch()
+    async def go():
+        async with Elasticsearch() as es:
+            async with Scan(
+                es
+                index='index',
+                doc_type='doc_type',
+                query={},
+            ) as scan:
+                print(scan.total)
 
-    async with Scan(
-        es
-        index='<index>',
-        doc_type='<doc type>',
-        query={'<query>'},
-    ) as scan:
-        async for scroll in scan:
-            for doc in scroll:
-                print(doc['_source'])
+                async for scroll in scan:
+                    for doc in scroll:
+                        print(doc['_source'])
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(go())
+    loop.close()
