@@ -8,7 +8,7 @@ services:
   - elasticsearch
 before_script:
   # slow elasticsearch service
-  - sleep 10
+  - echo 'waiting for elasticsearch is up'; while ! curl --output /dev/null --silent --head --fail http://localhost:9200; do sleep 1; echo -n '.'; done
 script:
   - export TOXENV=py`python -c 'import sys; print("".join(map(str, sys.version_info[:2])))'`
   - echo "$TOXENV"
