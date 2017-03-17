@@ -17,11 +17,17 @@ class AIOHttpConnection(Connection):
         http_auth=None,
         use_ssl=False,
         verify_certs=False,
-        maxsize=20,
+        maxsize=10,
+        headers=None,
         *, loop,
         **kwargs
     ):
         super().__init__(host=host, port=port, **kwargs)
+
+        if headers is None:
+            headers = {}
+        self.headers = headers
+        self.headers.setdefault('Content-Type', 'application/json')
 
         self.loop = loop
 
@@ -67,7 +73,7 @@ class AIOHttpConnection(Connection):
         response = None
         try:
             with aiohttp.Timeout(timeout or self.timeout, loop=self.loop):  # noqa
-                response = yield from self.session.request(method, url, data=body, timeout=None)  # noqa
+                response = yield from self.session.request(method, url, data=body, headers=self.headers, timeout=None)  # noqa
                 raw_data = yield from response.text()
 
             duration = self.loop.time() - start
