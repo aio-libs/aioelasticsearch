@@ -2,13 +2,11 @@ import asyncio
 import logging
 from itertools import chain
 
-from elasticsearch.exceptions import (
-    ConnectionError, ConnectionTimeout, ImproperlyConfigured,
-    SerializationError, TransportError,
-)
-from elasticsearch.serializer import (
-    DEFAULT_SERIALIZERS, Deserializer, JSONSerializer,
-)
+from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
+                                      ImproperlyConfigured, SerializationError,
+                                      TransportError)
+from elasticsearch.serializer import (DEFAULT_SERIALIZERS, Deserializer,
+                                      JSONSerializer)
 from elasticsearch.transport import Transport, get_host_info
 
 from .compat import create_task
@@ -87,9 +85,9 @@ class AIOHttpTransport(Transport):
             def _initial_sniff_reset(future):
                 self.initial_sniff_task = None
 
-            self.initial_sniff_task = create_task(loop=self.loop)(
-                self.sniff_hosts(initial=True),
-            )
+            task = self.sniff_hosts(initial=True)
+
+            self.initial_sniff_task = create_task(loop=self.loop)(task)
             self.initial_sniff_task.add_done_callback(_initial_sniff_reset)
 
     def set_connections(self, hosts):
@@ -123,7 +121,9 @@ class AIOHttpTransport(Transport):
             self.connection_pool = DummyConnectionPool(connections)
         else:
             self.connection_pool = self.connection_pool_class(
-                connections, loop=self.loop, **self.kwargs,
+                connections,
+                loop=self.loop,
+                **self.kwargs
             )
 
     @asyncio.coroutine

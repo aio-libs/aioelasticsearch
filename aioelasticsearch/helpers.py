@@ -141,7 +141,7 @@ class Scan:
             body=self._query,
             scroll=self._scroll,
             size=self._size,
-            **self._kwargs,
+            **self._kwargs
         )
 
         self.__initial = False

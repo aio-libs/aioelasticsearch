@@ -3,9 +3,8 @@ import asyncio
 import aiohttp
 from aiohttp.errors import ClientError, FingerprintMismatch
 from elasticsearch.connection import Connection
-from elasticsearch.exceptions import (
-    ConnectionError, ConnectionTimeout, SSLError,
-)
+from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
+                                      SSLError)
 from yarl import URL
 
 

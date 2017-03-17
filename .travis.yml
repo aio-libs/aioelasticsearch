@@ -1,0 +1,21 @@
+dist: trusty
+language: python
+python:
+  - "3.4"
+  - "3.5"
+  - "3.6"
+services:
+  - elasticsearch
+before_script:
+  # slow elasticsearch service
+  - sleep 10
+script:
+  - export TOXENV=py`python -c 'import sys; print("".join(map(str, sys.version_info[:2])))'`
+  - echo "$TOXENV"
+
+  - tox
+cache:
+  directories:
+    - $HOME/.cache/pip
+notifications:
+  email: false
