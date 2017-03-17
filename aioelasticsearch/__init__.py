@@ -31,9 +31,8 @@ class Elasticsearch(_Elasticsearch):
 
         super().__init__(hosts, transport_class=transport_class, **kwargs)
 
-    @asyncio.coroutine
     def close(self):
-        yield from self.transport.close()
+        return self.transport.close()
 
     if PY_350:
         @asyncio.coroutine
