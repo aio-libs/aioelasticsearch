@@ -1,7 +1,7 @@
 import asyncio
 
-from aioelasticsearch import Elasticsearch
 import pytest
+from aioelasticsearch import Elasticsearch
 
 
 @pytest.fixture
