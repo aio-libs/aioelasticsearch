@@ -9,8 +9,12 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
+env:
+  - ES="5.0.0"
+  - ES="5.1.0"
+  - ES="5.2.0"
 install:
-  - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.2.2.deb && sudo dpkg -i --force-confnew elasticsearch-5.2.2.deb && sudo service elasticsearch start
+  - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ES.deb && sudo dpkg -i --force-confnew elasticsearch-$ES.deb && sudo service elasticsearch start
   - pip install -U setuptools
   - pip install -U pip
   - pip install -U wheel
