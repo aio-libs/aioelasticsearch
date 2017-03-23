@@ -39,7 +39,7 @@ Usage
 Features
 --------
 
-Asynchronous _`scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`
+Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_
 
 .. code-block:: python
 
