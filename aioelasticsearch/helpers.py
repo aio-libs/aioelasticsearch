@@ -1,20 +1,9 @@
 import asyncio
 
-from .compat import PY_350, PY_352
-
+from .compat import PY_350, PY_352, create_future
 
 if not PY_350:
     StopAsyncIteration = None  # noqa
-
-
-def create_future(*, loop=None):
-    if loop is None:
-        loop = asyncio.get_event_loop()
-
-    try:
-        return loop.create_future()
-    except AttributeError:
-        return asyncio.Future(loop=loop)
 
 
 class Scan:

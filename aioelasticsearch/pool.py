@@ -18,7 +18,8 @@ class AIOHttpConnectionPool:
         timeout_cutoff=5,
         selector_class=RoundRobinSelector,
         randomize_hosts=True,
-        *, loop,
+        *,
+        loop,
         **kwargs
     ):
         self._dead_timeout = dead_timeout

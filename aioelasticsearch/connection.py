@@ -19,7 +19,8 @@ class AIOHttpConnection(Connection):
         verify_certs=False,
         maxsize=10,
         headers=None,
-        *, loop,
+        *,
+        loop,
         **kwargs
     ):
         super().__init__(host=host, port=port, **kwargs)

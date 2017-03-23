@@ -35,7 +35,8 @@ class AIOHttpTransport(Transport):
         retry_on_status=(502, 503, 504, ),
         retry_on_timeout=False,
         send_get_body_as='GET',
-        *, loop,
+        *,
+        loop,
         **kwargs
     ):
         self.loop = loop
