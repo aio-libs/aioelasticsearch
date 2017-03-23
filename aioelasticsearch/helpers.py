@@ -27,7 +27,8 @@ class Scan:
         size=1000,
         preserve_order=False,
         clear_scroll=True,
-        *, loop=None,
+        *,
+        loop=None,
         **kwargs
     ):
         self._loop = loop
@@ -180,7 +181,5 @@ class Scan:
     def clear_scroll(self):
         if self._scroll_id is not None and self._clear_scroll:
             yield from self._es.clear_scroll(
-                body={
-                    'scroll_id': [self._scroll_id],
-                },
+                body={'scroll_id': [self._scroll_id]},
             )
