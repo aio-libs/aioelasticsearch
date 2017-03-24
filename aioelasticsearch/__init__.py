@@ -19,8 +19,12 @@ __version__ = '0.1.2'
 class Elasticsearch(_Elasticsearch):
 
     def __init__(
-        self, hosts=None, transport_class=AIOHttpTransport,
-        *, loop=None, **kwargs
+        self,
+        hosts=None,
+        transport_class=AIOHttpTransport,
+        *,
+        loop=None,
+        **kwargs
     ):
         if loop is None:
             loop = asyncio.get_event_loop()

@@ -155,7 +155,8 @@ class Scan:
         assert not self.__initial
 
         resp = yield from self._es.scroll(
-            self._scroll_id, scroll=self._scroll,
+            self._scroll_id,
+            scroll=self._scroll,
         )
 
         hits = resp['hits']['hits']

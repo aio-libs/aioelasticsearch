@@ -44,8 +44,7 @@ class AIOHttpConnection(Connection):
         self.verify_certs = verify_certs
 
         self.base_url = URL('http%s://%s:%d%s/' % (
-            's' if use_ssl else '',
-            host, port, self.url_prefix,
+            's' if use_ssl else '', host, port, self.url_prefix,
         ))
 
         self.session = kwargs.get('session')
