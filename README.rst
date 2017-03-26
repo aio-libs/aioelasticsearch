@@ -51,7 +51,7 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
     async def go():
         async with Elasticsearch() as es:
             async with Scan(
-                es
+                es,
                 index='index',
                 doc_type='doc_type',
                 query={},
