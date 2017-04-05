@@ -24,6 +24,7 @@ class AIOHttpConnection(Connection):
         port=9200,
         http_auth=None,
         use_ssl=False,
+        ssl_context=None,
         verify_certs=False,
         maxsize=10,
         headers=None,
@@ -57,28 +58,24 @@ class AIOHttpConnection(Connection):
 
         self.session = kwargs.get('session')
         if self.session is None:
+            connector_kwargs = {
+                'limit': maxsize,
+                'use_dns_cache': kwargs.get('use_dns_cache', False),
+                'ssl_context': ssl_context,
+                'verify_ssl': self.verify_certs,
+                'loop': self.loop,
+            }
+            session_kwargs = {'auth': self.http_auth}
+
             if AIOHTTP_2:
-                self.session = aiohttp.ClientSession(
-                    auth=self.http_auth,
-                    conn_timeout=None,
-                    connector=aiohttp.TCPConnector(
-                        limit=maxsize,
-                        use_dns_cache=kwargs.get('use_dns_cache', False),
-                        verify_ssl=self.verify_certs,
-                        loop=self.loop,
-                    ),
-                )
+                session_kwargs['conn_timeout'] = None
             else:
-                self.session = aiohttp.ClientSession(
-                    auth=self.http_auth,
-                    connector=aiohttp.TCPConnector(
-                        limit=maxsize,
-                        use_dns_cache=kwargs.get('use_dns_cache', False),
-                        verify_ssl=self.verify_certs,
-                        conn_timeout=None,
-                        loop=self.loop,
-                    ),
-                )
+                connector_kwargs['conn_timeout'] = None
+
+            self.session = aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(**connector_kwargs),
+                **session_kwargs,
+            )
 
     def close(self):
         return self.session.close()
