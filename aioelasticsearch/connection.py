@@ -74,7 +74,7 @@ class AIOHttpConnection(Connection):
 
             self.session = aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(**connector_kwargs),
-                **session_kwargs,
+                **session_kwargs
             )
 
     def close(self):
