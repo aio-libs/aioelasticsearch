@@ -1,11 +1,19 @@
 import asyncio
+import ssl
 
 import aiohttp
-from aiohttp.errors import ClientError, FingerprintMismatch
-from elasticsearch.connection import Connection
-from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
+
+from .compat import AIOHTTP_2  # isort:skip
+
+if AIOHTTP_2:
+    from aiohttp import ClientError
+else:
+    from aiohttp.errors import ClientError
+
+from elasticsearch.connection import Connection  # noqa # isort:skip
+from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,  # noqa # isort:skip
                                       SSLError)
-from yarl import URL
+from yarl import URL  # noqa # isort:skip
 
 
 class AIOHttpConnection(Connection):
@@ -49,16 +57,28 @@ class AIOHttpConnection(Connection):
 
         self.session = kwargs.get('session')
         if self.session is None:
-            self.session = aiohttp.ClientSession(
-                auth=self.http_auth,
-                connector=aiohttp.TCPConnector(
-                    limit=maxsize,
-                    use_dns_cache=kwargs.get('use_dns_cache', False),
-                    verify_ssl=self.verify_certs,
+            if AIOHTTP_2:
+                self.session = aiohttp.ClientSession(
+                    auth=self.http_auth,
                     conn_timeout=None,
-                    loop=self.loop,
-                ),
-            )
+                    connector=aiohttp.TCPConnector(
+                        limit=maxsize,
+                        use_dns_cache=kwargs.get('use_dns_cache', False),
+                        verify_ssl=self.verify_certs,
+                        loop=self.loop,
+                    ),
+                )
+            else:
+                self.session = aiohttp.ClientSession(
+                    auth=self.http_auth,
+                    connector=aiohttp.TCPConnector(
+                        limit=maxsize,
+                        use_dns_cache=kwargs.get('use_dns_cache', False),
+                        verify_ssl=self.verify_certs,
+                        conn_timeout=None,
+                        loop=self.loop,
+                    ),
+                )
 
     def close(self):
         return self.session.close()
@@ -78,17 +98,22 @@ class AIOHttpConnection(Connection):
 
             duration = self.loop.time() - start
 
+        except ssl.CertificateError as exc:
+            self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=exc)  # noqa
+            raise SSLError('N/A', str(exc), exc)
+
         except asyncio.TimeoutError as exc:
             self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=exc)  # noqa
             raise ConnectionTimeout('TIMEOUT', str(exc), exc)
 
-        except FingerprintMismatch as exc:
-            self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=exc)  # noqa
-            raise SSLError('N/A', str(exc), exc)
-
         except ClientError as exc:
             self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=exc)  # noqa
-            raise ConnectionError('N/A', str(exc), exc)
+            _exc = str(exc)
+            # aiohttp wraps ssl error
+            if 'SSL: CERTIFICATE_VERIFY_FAILED' in _exc:
+                raise SSLError('N/A', _exc, exc)
+
+            raise ConnectionError('N/A', _exc, exc)
 
         finally:
             if response is not None:
