@@ -73,7 +73,15 @@ class AIOHttpConnection(Connection):
         return self.session.close()
 
     @asyncio.coroutine
-    def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=()):  # noqa
+    def perform_request(
+        self,
+        method,
+        url,
+        params=None,
+        body=None,
+        timeout=None,
+        ignore=()
+    ):
         url_path = url
 
         url = (self.base_url / url.lstrip('/')).with_query(params)
@@ -81,22 +89,50 @@ class AIOHttpConnection(Connection):
         start = self.loop.time()
         response = None
         try:
-            with aiohttp.Timeout(timeout or self.timeout, loop=self.loop):  # noqa
-                response = yield from self.session.request(method, url, data=body, headers=self.headers, timeout=None)  # noqa
+            with aiohttp.Timeout(timeout or self.timeout, loop=self.loop):
+                response = yield from self.session.request(
+                    method,
+                    url,
+                    data=body,
+                    headers=self.headers,
+                    timeout=None,
+                )
                 raw_data = yield from response.text()
 
             duration = self.loop.time() - start
 
         except ssl.CertificateError as exc:
-            self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=exc)  # noqa
+            self.log_request_fail(
+                method,
+                url,
+                url_path,
+                body,
+                self.loop.time() - start,
+                exception=exc,
+            )
             raise SSLError('N/A', str(exc), exc)
 
         except asyncio.TimeoutError as exc:
-            self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=exc)  # noqa
+            self.log_request_fail(
+                method,
+                url,
+                url_path,
+                body,
+                self.loop.time() - start,
+                exception=exc,
+            )
             raise ConnectionTimeout('TIMEOUT', str(exc), exc)
 
         except ClientError as exc:
-            self.log_request_fail(method, url, url_path, body, self.loop.time() - start, exception=exc)  # noqa
+            self.log_request_fail(
+                method,
+                url,
+                url_path,
+                body,
+                self.loop.time() - start,
+                exception=exc,
+            )
+
             _exc = str(exc)
             # aiohttp wraps ssl error
             if 'SSL: CERTIFICATE_VERIFY_FAILED' in _exc:
@@ -108,11 +144,31 @@ class AIOHttpConnection(Connection):
             if response is not None:
                 yield from response.release()
 
-        # raise errors based on http status codes, let the client handle those if needed  # noqa
-        if not (200 <= response.status < 300) and response.status not in ignore:  # noqa
-            self.log_request_fail(method, url, url_path, body, duration, response.status, raw_data)  # noqa
+        # raise errors based on http status codes
+        # let the client handle those if needed
+        if (
+            not (200 <= response.status < 300) and
+            response.status not in ignore
+        ):
+            self.log_request_fail(
+                method,
+                url,
+                url_path,
+                body,
+                duration,
+                response.status,
+                raw_data,
+            )
             self._raise_error(response.status, raw_data)
 
-        self.log_request_success(method, url, url_path, body, response.status, raw_data, duration)  # noqa
+        self.log_request_success(
+            method,
+            url,
+            url_path,
+            body,
+            response.status,
+            raw_data,
+            duration,
+        )
 
         return response.status, response.headers, raw_data
