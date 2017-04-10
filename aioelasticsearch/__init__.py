@@ -43,6 +43,5 @@ class Elasticsearch(_Elasticsearch):
         def __aenter__(self):  # noqa
             return self
 
-        @asyncio.coroutine
         def __aexit__(self, *exc_info):  # noqa
-            yield from self.close()
+            return self.close()
