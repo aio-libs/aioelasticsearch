@@ -6,6 +6,8 @@ import random
 from elasticsearch import RoundRobinSelector
 from elasticsearch.exceptions import ImproperlyConfigured
 
+from .compat import AIOHTTP_2
+
 logger = logging.getLogger('elasticsearch')
 
 
@@ -124,6 +126,9 @@ class AIOHttpConnectionPool:
         while not self.dead.empty():
             _, connection = self.dead.get_nowait()
             coros.append(connection.close())
+
+        if AIOHTTP_2:
+            return coros
 
         return asyncio.gather(*coros, return_exceptions=True, loop=self.loop)
 
