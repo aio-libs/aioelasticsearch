@@ -3,7 +3,7 @@ import ssl
 
 import aiohttp
 
-from .compat import AIOHTTP_2  # isort:skip
+from .compat import AIOHTTP_2, create_future  # isort:skip
 
 if AIOHTTP_2:
     from aiohttp import ClientError
@@ -70,7 +70,13 @@ class AIOHttpConnection(Connection):
             )
 
     def close(self):
-        return self.session.close()
+        coro = self.session.close()
+        if not AIOHTTP_2:
+            return coro
+
+        future = create_future(loop=self.loop)
+        future.set_result(None)
+        return future
 
     @asyncio.coroutine
     def perform_request(
