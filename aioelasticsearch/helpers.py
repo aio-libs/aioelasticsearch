@@ -161,6 +161,9 @@ class Scan:
 
         hits = resp['hits']['hits']
 
+        if '_scroll_id' in resp:
+            self._scroll_id = resp['_scroll_id']
+
         self.__found += len(hits)
 
         self.__has_more = self.__found < self._total
