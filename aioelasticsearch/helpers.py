@@ -138,7 +138,7 @@ class Scan:
 
         hits = resp['hits']['hits']
 
-        self._scroll_id = resp.get('_scroll_id')
+        self._scroll_id = resp['_scroll_id']
 
         self._total = resp['hits']['total']
 
@@ -161,8 +161,7 @@ class Scan:
 
         hits = resp['hits']['hits']
 
-        if '_scroll_id' in resp:
-            self._scroll_id = resp['_scroll_id']
+        self._scroll_id = resp['_scroll_id']
 
         self.__found += len(hits)
 
