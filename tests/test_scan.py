@@ -27,19 +27,19 @@ def test_scan_initial_raises(loop, es):
         loop.run_until_complete(scan.search())
 
 
-@pytest.mark.parametrize('scroll_size', [
-    1,
-    5,
-    7,
-    10,
-    15,
+@pytest.mark.parametrize('n,scroll_size', [
+    (6, 6),  # 1 scroll
+    (6, 8),  # 1 scroll
+    (6, 3),  # 2 scrolls
+    (6, 4),  # 2 scrolls
+    (6, 2),  # 3 scrolls
+    (6, 1),  # 6 scrolls
 ])
 @pytest.mark.run_loop
 @asyncio.coroutine
-def test_scan_equal_chunks(loop, es, scroll_size):
+def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
     index = 'test_aioes'
     doc_type = 'type_1'
-    n = 10
     yield from populate(es, index, doc_type, n, loop=loop)
 
     ids = set()
