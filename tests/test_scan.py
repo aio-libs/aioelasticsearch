@@ -4,12 +4,11 @@ import pytest
 
 from aioelasticsearch import NotFoundError
 from aioelasticsearch.helpers import Scan
-
 from tests.utils import populate
 
 
 def test_scan_initial_raises(loop, es):
-    scan = Scan(es)
+    scan = Scan(es, loop=loop)
 
     with pytest.raises(AssertionError):
         scan.scroll_id
@@ -49,6 +48,7 @@ def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
         index=index,
         doc_type=doc_type,
         size=scroll_size,
+        loop=loop,
     ) as scan:
         yield from scan.scroll()
 
@@ -93,6 +93,7 @@ def test_scan_equal_chunks_while_loop(loop, es, n, scroll_size):
         index=index,
         doc_type=doc_type,
         size=scroll_size,
+        loop=loop,
     ) as scan:
 
         yield from scan.scroll()
@@ -131,6 +132,7 @@ def test_scan_has_more(loop, es):
         index=index,
         doc_type=doc_type,
         size=scroll_size,
+        loop=loop,
     ) as scan:
         yield from scan.scroll()
         assert scan.has_more
@@ -158,6 +160,7 @@ def test_scan_clear_scroll(loop, es):
         index=index,
         doc_type=doc_type,
         size=scroll_size,
+        loop=loop,
     ) as scan:
         yield from scan.scroll()
 
