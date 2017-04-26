@@ -27,6 +27,7 @@ def test_scan_initial_raises(loop, es):
 
 
 @pytest.mark.parametrize('n,scroll_size', [
+    (0, 1),  # no results
     (6, 6),  # 1 scroll
     (6, 8),  # 1 scroll
     (6, 3),  # 2 scrolls
@@ -54,10 +55,12 @@ def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
 
         for scroll in scan:
             docs = yield from scroll
-            data.append(docs)
 
-            for doc in docs:
-                ids.add(doc['_id'])
+            if docs:
+                data.append(docs)
+
+                for doc in docs:
+                    ids.add(doc['_id'])
 
         # check number of unique doc ids
         assert len(ids) == n == scan.total
@@ -72,6 +75,7 @@ def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
 
 
 @pytest.mark.parametrize('n,scroll_size', [
+    (0, 1),  # no results
     (6, 6),  # 1 scroll
     (6, 8),  # 1 scroll
     (6, 3),  # 2 scrolls
@@ -100,8 +104,9 @@ def test_scan_equal_chunks_while_loop(loop, es, n, scroll_size):
 
         while True:
             docs = yield from next(scan)
-            data.append(docs)
-            ids |= set([doc['_id'] for doc in docs])
+            if docs:
+                data.append(docs)
+                ids |= set([doc['_id'] for doc in docs])
 
             if not scan.has_more:
                 break

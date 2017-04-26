@@ -5,6 +5,8 @@ import asyncio
 def populate(es, index, doc_type, n, *, loop):
     coros = []
 
+    yield from es.transport.perform_request('PUT', index)
+
     for i in range(n):
         body = {
             'foo': i,
