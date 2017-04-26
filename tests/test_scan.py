@@ -71,6 +71,51 @@ def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
     assert scroll_sizes == expected_scroll_sizes
 
 
+@pytest.mark.parametrize('n,scroll_size', [
+    (6, 6),  # 1 scroll
+    (6, 8),  # 1 scroll
+    (6, 3),  # 2 scrolls
+    (6, 4),  # 2 scrolls
+    (6, 2),  # 3 scrolls
+    (6, 1),  # 6 scrolls
+])
+@pytest.mark.run_loop
+@asyncio.coroutine
+def test_scan_equal_chunks_while_loop(loop, es, n, scroll_size):
+    index = 'test_aioes'
+    doc_type = 'type_1'
+    yield from populate(es, index, doc_type, n, loop=loop)
+
+    ids = set()
+    data = []
+    with Scan(
+        es,
+        index=index,
+        doc_type=doc_type,
+        size=scroll_size,
+    ) as scan:
+
+        yield from scan.scroll()
+
+        while True:
+            docs = yield from next(scan)
+            data.append(docs)
+            ids |= set([doc['_id'] for doc in docs])
+
+            if not scan.has_more:
+                break
+
+        # check number of unique doc ids
+        assert len(ids) == n == scan.total
+
+    # check number of docs in a scroll
+    expected_scroll_sizes = [scroll_size] * (n // scroll_size)
+    if n % scroll_size != 0:
+        expected_scroll_sizes.append(n % scroll_size)
+
+    scroll_sizes = [len(scroll) for scroll in data]
+    assert scroll_sizes == expected_scroll_sizes
+
 @pytest.mark.run_loop
 @asyncio.coroutine
 def test_scan_has_more(loop, es):
