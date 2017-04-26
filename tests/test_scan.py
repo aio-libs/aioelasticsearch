@@ -116,6 +116,7 @@ def test_scan_equal_chunks_while_loop(loop, es, n, scroll_size):
     scroll_sizes = [len(scroll) for scroll in data]
     assert scroll_sizes == expected_scroll_sizes
 
+
 @pytest.mark.run_loop
 @asyncio.coroutine
 def test_scan_has_more(loop, es):
