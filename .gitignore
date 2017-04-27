@@ -1,5 +1,6 @@
 # python specific
 env*
+.cache/
 *.pyc
 *.so
 *.pyd
@@ -9,6 +10,7 @@ MANIFEST
 __pycache__/
 *.egg-info/
 .coverage
+.python-version
 htmlcov
 
 # generic files to ignore

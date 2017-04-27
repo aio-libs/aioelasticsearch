@@ -13,6 +13,7 @@ env:
   - ES="5.0.2"
   - ES="5.1.2"
   - ES="5.2.2"
+  - ES="5.3.0"
 install:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ES.deb && sudo dpkg -i --force-confnew elasticsearch-$ES.deb && sudo service elasticsearch start
   - pip install -U setuptools
