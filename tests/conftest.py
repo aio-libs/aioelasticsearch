@@ -1,7 +1,7 @@
 import asyncio
+import sys
 
 import pytest
-
 from aioelasticsearch import Elasticsearch
 
 
@@ -85,3 +85,9 @@ def pytest_pyfunc_call(pyfuncitem):
         loop.run_until_complete(pyfuncitem.obj(**testargs))
 
         return True
+
+
+def pytest_ignore_collect(path, config):
+    if 'py35' in str(path):
+        if sys.version_info < (3, 5, 0):
+            return True
