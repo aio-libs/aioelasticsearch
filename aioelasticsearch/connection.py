@@ -3,7 +3,7 @@ import ssl
 
 import aiohttp
 
-from .compat import AIOHTTP_2, create_future  # isort:skip
+from aioelasticsearch.compat import AIOHTTP_2, create_future
 
 if AIOHTTP_2:
     from aiohttp import ClientError
