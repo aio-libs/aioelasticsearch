@@ -14,7 +14,7 @@ from tests.utils import populate
     (6, 1),  # 6 scrolls
 ])
 @pytest.mark.run_loop
-async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
+async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):  # noqa
     index = 'test_aioes'
     doc_type = 'type_1'
     await populate(es, index, doc_type, n, loop=loop)
