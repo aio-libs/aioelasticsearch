@@ -71,12 +71,13 @@ class AIOHttpConnection(Connection):
 
     def close(self):
         coro = self.session.close()
+
         if not AIOHTTP_2:
             return coro
 
-        future = create_future(loop=self.loop)
-        future.set_result(None)
-        return future
+        fut = create_future(loop=self.loop)
+        fut.set_result(None)
+        return fut
 
     @asyncio.coroutine
     def perform_request(
