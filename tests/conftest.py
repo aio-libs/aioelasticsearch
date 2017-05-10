@@ -46,6 +46,7 @@ def es(loop):
         yield es
     finally:
         loop.run_until_complete(_flush_es())
+        loop.run_until_complete(es.close())
 
 
 @pytest.mark.tryfirst

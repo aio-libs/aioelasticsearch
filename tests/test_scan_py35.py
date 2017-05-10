@@ -4,6 +4,30 @@ from aioelasticsearch.helpers import Scan
 from tests.utils import populate
 
 
+@pytest.mark.run_loop
+async def test_scan_initial_raises(loop, es):  # noqa
+    scan = Scan(es, loop=loop)
+
+    with pytest.raises(AssertionError):
+        async for scroll in scan:  # noqa
+            pass
+
+    with pytest.raises(AssertionError):
+        scan.scroll_id
+
+    with pytest.raises(AssertionError):
+        scan.total
+
+    with pytest.raises(AssertionError):
+        scan.has_more
+
+    with pytest.raises(AssertionError):
+        next(scan)
+
+    with pytest.raises(AssertionError):
+        await scan.search()
+
+
 @pytest.mark.parametrize('n,scroll_size', [
     (0, 1),  # no results
     (6, 6),  # 1 scroll
@@ -17,10 +41,13 @@ from tests.utils import populate
 async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):  # noqa
     index = 'test_aioes'
     doc_type = 'type_1'
-    await populate(es, index, doc_type, n, loop=loop)
+    body = {'foo': 1}
+
+    await populate(es, index, doc_type, n, body, loop=loop)
 
     ids = set()
     data = []
+
     async with Scan(
         es,
         index=index,
@@ -30,11 +57,10 @@ async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):  # noqa
     ) as scan:
 
         async for scroll in scan:
-            if scroll:
-                data.append(scroll)
+            data.append(scroll)
 
-                for doc in scroll:
-                    ids.add(doc['_id'])
+            for doc in scroll:
+                ids.add(doc['_id'])
 
         # check number of unique doc ids
         assert len(ids) == n == scan.total
