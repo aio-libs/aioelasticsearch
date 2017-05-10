@@ -20,6 +20,8 @@ class Scan:
         loop=None,
         **kwargs
     ):
+        if loop is None:
+            loop = asyncio.get_event_loop()
         self._loop = loop
 
         self._es = es
