@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 import pytest
 from aioelasticsearch import Elasticsearch
@@ -35,13 +36,26 @@ def es(loop):
         'DELETE',
         '/_all',
     )
-    coros = [delete_template, delete_all]
-    coro = asyncio.gather(*coros, loop=loop)
+    remove_coros = [delete_template, delete_all]
+
+    coro = asyncio.gather(*remove_coros, loop=loop)
     loop.run_until_complete(coro)
 
     try:
         yield es
     finally:
+        delete_template = es.transport.perform_request(
+            'DELETE',
+            '/_template/*',
+        )
+        delete_all = es.transport.perform_request(
+            'DELETE',
+            '/_all',
+        )
+
+        remove_coros = [delete_template, delete_all]
+        coro = asyncio.gather(*remove_coros, loop=loop)
+        loop.run_until_complete(coro)
         loop.run_until_complete(es.close())
 
 
@@ -71,3 +85,9 @@ def pytest_pyfunc_call(pyfuncitem):
         loop.run_until_complete(pyfuncitem.obj(**testargs))
 
         return True
+
+
+def pytest_ignore_collect(path, config):
+    if 'py35' in str(path):
+        if sys.version_info < (3, 5, 0):
+            return True
