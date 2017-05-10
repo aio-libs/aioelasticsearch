@@ -43,6 +43,7 @@ class Scan:
         self.__has_more = None
         self.__found = 0
         self.__scroll_hits = None
+        self.__scroll_hits_found = False
 
     def __enter__(self):
         return self
@@ -56,7 +57,7 @@ class Scan:
     def __next__(self):  # noqa
         assert not self.__initial
 
-        if self.__scroll_hits:
+        if self.__scroll_hits is not None and self.__scroll_hits_found:
             fut = create_future(loop=self._loop)
             fut.set_result(self.__scroll_hits)
 
@@ -149,6 +150,8 @@ class Scan:
         self.__has_more = self.__found < self._total
 
         self.__scroll_hits = hits
+
+        self.__scroll_hits_found = bool(self.__scroll_hits)
 
         return hits
 
