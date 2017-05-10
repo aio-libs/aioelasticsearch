@@ -54,7 +54,7 @@ class Scan:
     def __next__(self):  # noqa
         assert not self.__initial
 
-        if self.__scroll_hits is not None:
+        if self.__scroll_hits:
             fut = create_future(loop=self._loop)
             fut.set_result(self.__scroll_hits)
 
@@ -94,10 +94,10 @@ class Scan:
             else:
                 hits = yield from self.search()
 
-            if hits:
-                return hits
-            else:
+            if not hits:
                 raise StopAsyncIteration
+
+            return hits
 
     @property
     def scroll_id(self):
