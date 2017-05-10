@@ -78,12 +78,12 @@ class AIOHttpTransport(Transport):
         # ...and instantiate them
         self.set_connections(hosts)
         # retain the original connection instances for sniffing
-        self.seed_connections = self.connection_pool.connections[:]
+        self.seed_connections = set(self.connection_pool.connections)
 
         self.initial_sniff_task = None
 
         if sniff_on_start:
-            def _initial_sniff_reset(future):
+            def _initial_sniff_reset(fut):
                 self.initial_sniff_task = None
 
             task = self.sniff_hosts(initial=True)
@@ -131,16 +131,24 @@ class AIOHttpTransport(Transport):
     def _get_sniff_data(self, initial=False):
         previous_sniff = self.last_sniff
 
+        tried = set()
+
         try:
             # reset last_sniff timestamp
             self.last_sniff = self.loop.time()
-            for c in chain(
-                self.connection_pool.connections, self.seed_connections,
+            for connection in chain(
+                self.connection_pool.connections,
+                self.seed_connections,
             ):
+                if connection in tried:
+                    continue
+
+                tried.add(connection)
+
                 try:
                     # use small timeout for the sniffing request,
                     # should be a fast api call
-                    _, headers, node_info = yield from c.perform_request(
+                    _, headers, node_info = yield from connection.perform_request(  # noqa
                         'GET',
                         '/_nodes/_all/http',
                         timeout=self.sniff_timeout if not initial else None,
@@ -172,27 +180,33 @@ class AIOHttpTransport(Transport):
                 'N/A', 'Unable to sniff hosts - no viable hosts found.',
             )
 
+        yield from self.connection_pool.close(ignore=self.seed_connections)
+
         self.set_connections(hosts)
 
     def close(self):
-        if self.initial_sniff_task is None:
-            return self.connection_pool.close()
+        coros = []
 
-        self.initial_sniff_task.cancel()
+        seeds = self.seed_connections - self.connection_pool.orig_connections
 
-        @asyncio.coroutine
-        def _initial_sniff_wrapper():
-            try:
-                yield from self.initial_sniff_task
-            except asyncio.CancelledError:
-                return
+        for connection in seeds:
+            coros.append(connection.close())
 
-        return asyncio.gather(
-            _initial_sniff_wrapper(),
-            self.connection_pool.close(),
-            return_exceptions=True,
-            loop=self.loop,
-        )
+        if self.initial_sniff_task is not None:
+            self.initial_sniff_task.cancel()
+
+            @asyncio.coroutine
+            def _initial_sniff_wrapper():
+                try:
+                    yield from self.initial_sniff_task
+                except asyncio.CancelledError:
+                    return
+
+            coros.append(_initial_sniff_wrapper())
+
+        coros.append(self.connection_pool.close())
+
+        return asyncio.gather(*coros, loop=self.loop)
 
     @asyncio.coroutine
     def get_connection(self):
@@ -203,12 +217,11 @@ class AIOHttpTransport(Transport):
             if self.loop.time() >= self.last_sniff + self.sniffer_timeout:
                 yield from self.sniff_hosts()
 
-        connection = yield from self.connection_pool.get_connection()
-        return connection
+        return self.connection_pool.get_connection()
 
     @asyncio.coroutine
     def mark_dead(self, connection):
-        yield from self.connection_pool.mark_dead(connection)
+        self.connection_pool.mark_dead(connection)
 
         if self.sniff_on_connection_fail:
             yield from self.sniff_hosts()
