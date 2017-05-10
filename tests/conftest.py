@@ -1,8 +1,8 @@
 import asyncio
-import sys
 
 import pytest
 from aioelasticsearch import Elasticsearch
+from aioelasticsearch.compat import PY_350
 
 
 @pytest.fixture
@@ -28,22 +28,7 @@ def loop(request):
 def es(loop):
     es = Elasticsearch(loop=loop)
 
-    delete_template = es.transport.perform_request(
-        'DELETE',
-        '/_template/*',
-    )
-    delete_all = es.transport.perform_request(
-        'DELETE',
-        '/_all',
-    )
-    remove_coros = [delete_template, delete_all]
-
-    coro = asyncio.gather(*remove_coros, loop=loop)
-    loop.run_until_complete(coro)
-
-    try:
-        yield es
-    finally:
+    def _flush_es():
         delete_template = es.transport.perform_request(
             'DELETE',
             '/_template/*',
@@ -53,10 +38,14 @@ def es(loop):
             '/_all',
         )
 
-        remove_coros = [delete_template, delete_all]
-        coro = asyncio.gather(*remove_coros, loop=loop)
-        loop.run_until_complete(coro)
-        loop.run_until_complete(es.close())
+        return asyncio.gather(*[delete_template, delete_all], loop=loop)
+
+    loop.run_until_complete(_flush_es())
+
+    try:
+        yield es
+    finally:
+        loop.run_until_complete(_flush_es())
 
 
 @pytest.mark.tryfirst
@@ -88,6 +77,4 @@ def pytest_pyfunc_call(pyfuncitem):
 
 
 def pytest_ignore_collect(path, config):
-    if 'py35' in str(path):
-        if sys.version_info < (3, 5, 0):
-            return True
+    return 'py35' in str(path) and not PY_350
