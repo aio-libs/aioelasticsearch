@@ -174,7 +174,7 @@ class AIOHttpTransport(Transport):
     def sniff_hosts(self, initial=False):
         with (yield from self._connection_pool_lock):
             node_info = yield from self._get_sniff_data(initial)
-            hosts = list(filter(None, (self._get_host_info(n) for n in node_info)))
+            hosts = list(filter(None, (self._get_host_info(n) for n in node_info)))  # noqa
             # we weren't able to get any nodes, maybe using an incompatible
             # transport_schema or host_info_callback blocked all - raise error.
             if not hosts:
