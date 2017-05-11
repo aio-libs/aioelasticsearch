@@ -70,6 +70,7 @@ class AIOHttpTransport(Transport):
         # store all strategies...
         self.connection_pool_class = connection_pool_class
         self.connection_class = connection_class
+        self._connection_pool_lock = asyncio.Lock(loop=self.loop)
 
         # ...save kwargs to be passed to the connections
         self.kwargs = kwargs
@@ -171,18 +172,19 @@ class AIOHttpTransport(Transport):
 
     @asyncio.coroutine
     def sniff_hosts(self, initial=False):
-        node_info = yield from self._get_sniff_data(initial)
-        hosts = list(filter(None, (self._get_host_info(n) for n in node_info)))
-        # we weren't able to get any nodes, maybe using an incompatible
-        # transport_schema or host_info_callback blocked all - raise error.
-        if not hosts:
-            raise TransportError(
-                'N/A', 'Unable to sniff hosts - no viable hosts found.',
-            )
+        with (yield from self._connection_pool_lock):
+            node_info = yield from self._get_sniff_data(initial)
+            hosts = list(filter(None, (self._get_host_info(n) for n in node_info)))
+            # we weren't able to get any nodes, maybe using an incompatible
+            # transport_schema or host_info_callback blocked all - raise error.
+            if not hosts:
+                raise TransportError(
+                    'N/A', 'Unable to sniff hosts - no viable hosts found.',
+                )
 
-        yield from self.connection_pool.close(ignore=self.seed_connections)
+            yield from self.connection_pool.close(seeds=self.seed_connections)
 
-        self.set_connections(hosts)
+            self.set_connections(hosts)
 
     def close(self):
         coros = []
@@ -217,7 +219,8 @@ class AIOHttpTransport(Transport):
             if self.loop.time() >= self.last_sniff + self.sniffer_timeout:
                 yield from self.sniff_hosts()
 
-        return self.connection_pool.get_connection()
+        with (yield from self._connection_pool_lock):
+            return self.connection_pool.get_connection()
 
     @asyncio.coroutine
     def mark_dead(self, connection):
