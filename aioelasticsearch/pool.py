@@ -146,7 +146,7 @@ class DummyConnectionPool(AIOHttpConnectionPool):
     def get_connection(self):
         return self.connection
 
-    def close(self):
+    def close(self, seeds=None):
         return self.connection.close()
 
     def mark_live(self, connection):
