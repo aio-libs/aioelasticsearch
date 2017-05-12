@@ -6,6 +6,8 @@ import random
 from elasticsearch.connection_pool import ConnectionSelector
 from elasticsearch.exceptions import ImproperlyConfigured
 
+from .compat import create_future
+
 logger = logging.getLogger('elasticsearch')
 
 
@@ -132,11 +134,13 @@ class AIOHttpConnectionPool:
 
 class DummyConnectionPool(AIOHttpConnectionPool):
 
-    def __init__(self, connections, **kwargs):
+    def __init__(self, connections, *, loop, **kwargs):
         if len(connections) != 1:
             raise ImproperlyConfigured(
                 'DummyConnectionPool needs exactly one connection defined.',
             )
+
+        self.loop = loop
 
         self.connection_opts = connections
         self.connection = connections[0][0]
@@ -147,6 +151,14 @@ class DummyConnectionPool(AIOHttpConnectionPool):
         return self.connection
 
     def close(self, seeds=None):
+        if seeds is None:
+            seeds = set()
+
+        if self.connection in seeds:
+            fut = create_future(loop=self.loop)
+            fut.set_result(None)
+            return fut
+
         return self.connection.close()
 
     def mark_live(self, connection):

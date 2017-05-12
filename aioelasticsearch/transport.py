@@ -120,7 +120,11 @@ class AIOHttpTransport(Transport):
         connections = list(zip(connections, hosts))
 
         if len(connections) == 1:
-            self.connection_pool = DummyConnectionPool(connections)
+            self.connection_pool = DummyConnectionPool(
+                connections,
+                loop=self.loop,
+                **self.kwargs
+            )
         else:
             self.connection_pool = self.connection_pool_class(
                 connections,
