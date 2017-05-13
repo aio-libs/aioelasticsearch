@@ -9,7 +9,7 @@ from elasticsearch.serializer import (DEFAULT_SERIALIZERS, Deserializer,
                                       JSONSerializer)
 from elasticsearch.transport import Transport, get_host_info
 
-from .compat import create_task
+from .compat import ensure_future
 from .connection import AIOHttpConnection
 from .pool import AIOHttpConnectionPool, DummyConnectionPool
 
@@ -89,7 +89,7 @@ class AIOHttpTransport(Transport):
 
             task = self.sniff_hosts(initial=True)
 
-            self.initial_sniff_task = create_task(loop=self.loop)(task)
+            self.initial_sniff_task = ensure_future(task, loop=self.loop)
             self.initial_sniff_task.add_done_callback(_initial_sniff_reset)
 
     def set_connections(self, hosts):
