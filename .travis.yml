@@ -34,7 +34,7 @@ before_script:
   # slow elasticsearch service
   - echo 'waiting for elasticsearch is up'; while ! curl --output /dev/null --silent --head --fail http://127.0.0.1:9200; do sleep 1; echo -n '.'; done
 script:
-  - export TOXENV=py`python -c 'import sys; print("".join(map(str, sys.version_info[:2])))'`-$AIOHTTP
+  - export TOXENV=py`python -c 'import sys; print("".join(map(str, sys.version_info[:2])))'`-aiohttp$AIOHTTP
   - echo "$TOXENV"
 
   - tox
