@@ -15,6 +15,8 @@ env:
   - ES="5.2.2"
   - ES="5.3.0"
   - ES="5.4.0"
+  - AIOHTTP=2
+  - AIOHTTP=1
 install:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ES.deb && sudo dpkg -i --force-confnew elasticsearch-$ES.deb && sudo service elasticsearch start
   - pip install -U setuptools
@@ -25,7 +27,7 @@ before_script:
   # slow elasticsearch service
   - echo 'waiting for elasticsearch is up'; while ! curl --output /dev/null --silent --head --fail http://127.0.0.1:9200; do sleep 1; echo -n '.'; done
 script:
-  - export TOXENV=py`python -c 'import sys; print("".join(map(str, sys.version_info[:2])))'`
+  - export TOXENV=py`python -c 'import sys; print("".join(map(str, sys.version_info[:2])))'`-$AIOHTTP
   - echo "$TOXENV"
 
   - tox
