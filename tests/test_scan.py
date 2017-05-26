@@ -56,19 +56,21 @@ def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
         size=scroll_size,
         loop=loop,
     ) as scan:
+        try:
+            yield from scan.scroll()
 
-        yield from scan.scroll()
+            for scroll in scan:
+                scroll = yield from scroll
 
-        for scroll in scan:
-            scroll = yield from scroll
+                data.append(scroll)
 
-            data.append(scroll)
+                for doc in scroll:
+                    ids.add(doc['_id'])
 
-            for doc in scroll:
-                ids.add(doc['_id'])
-
-        # check number of unique doc ids
-        assert len(ids) == n == scan.total
+            # check number of unique doc ids
+            assert len(ids) == n == scan.total
+        finally:
+            yield from scan.clear_scroll()
 
     # check number of docs in a scroll
     expected_scroll_sizes = [scroll_size] * (n // scroll_size)
@@ -97,17 +99,21 @@ def test_scan_has_more(loop, es):
         size=scroll_size,
         loop=loop,
     ) as scan:
-        yield from scan.scroll()
+        try:
+            yield from scan.scroll()
 
-        assert scan.has_more
+            assert scan.has_more
 
-        for scroll in scan:
-            yield from scroll
+            for scroll in scan:
+                yield from scroll
 
-        with pytest.raises(StopIteration):
-            next(scan)
+            with pytest.raises(StopIteration):
+                next(scan)
 
-        assert not scan.has_more
+            assert not scan.has_more
+
+        finally:
+            yield from scan.clear_scroll()
 
 
 @pytest.mark.run_loop
