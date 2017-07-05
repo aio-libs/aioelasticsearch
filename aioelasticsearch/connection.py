@@ -2,8 +2,7 @@ import asyncio
 import ssl
 
 import aiohttp
-
-from aioelasticsearch.compat import AIOHTTP_2, create_future
+from aioelasticsearch.compat import AIOHTTP_2
 
 if AIOHTTP_2:
     from aiohttp import ClientError
@@ -70,14 +69,7 @@ class AIOHttpConnection(Connection):
             )
 
     def close(self):
-        coro = self.session.close()
-
-        if not AIOHTTP_2:
-            return coro
-
-        fut = create_future(loop=self.loop)
-        fut.set_result(None)
-        return fut
+        return self.session.close()
 
     @asyncio.coroutine
     def perform_request(

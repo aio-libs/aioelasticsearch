@@ -1,6 +1,6 @@
 import pytest
-
 from aioelasticsearch.helpers import Scan
+
 from tests.utils import populate
 
 
