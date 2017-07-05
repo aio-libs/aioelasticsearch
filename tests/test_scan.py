@@ -1,9 +1,9 @@
 import asyncio
 
 import pytest
-
 from aioelasticsearch import NotFoundError
 from aioelasticsearch.helpers import Scan
+
 from tests.utils import populate
 
 
