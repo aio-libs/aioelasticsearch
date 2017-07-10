@@ -100,7 +100,7 @@ class AIOHttpTransport(Transport):
             # kept around.
             if hasattr(self, 'connection_pool'):
                 for (connection, old_host) in self.connection_pool.connection_opts:  # noqa
-                    if old_host == host:
+                    if old_host == host and not connection.closed:
                         return connection
 
             kwargs = self.kwargs.copy()
