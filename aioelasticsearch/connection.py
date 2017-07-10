@@ -68,6 +68,10 @@ class AIOHttpConnection(Connection):
                 ),
             )
 
+    @property
+    def closed(self):
+        return self.session.closed
+
     def close(self):
         return self.session.close()
 
