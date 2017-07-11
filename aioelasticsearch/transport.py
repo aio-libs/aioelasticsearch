@@ -81,6 +81,8 @@ class AIOHttpTransport(Transport):
         # retain the original connection instances for sniffing
         self.seed_connections = set(self.connection_pool.connections)
 
+        self.seed_connection_opts = self.connection_pool.connection_opts
+
         self.initial_sniff_task = None
 
         if sniff_on_start:
@@ -99,7 +101,9 @@ class AIOHttpTransport(Transport):
             # options and identify connections that haven't changed and can be
             # kept around.
             if hasattr(self, 'connection_pool'):
-                for (connection, old_host) in self.connection_pool.connection_opts:  # noqa
+                existing_connections = self.connection_pool.connection_opts + self.seed_connection_opts  # noqa
+
+                for (connection, old_host) in existing_connections:
                     if old_host == host:
                         return connection
 
@@ -186,17 +190,18 @@ class AIOHttpTransport(Transport):
                     'N/A', 'Unable to sniff hosts - no viable hosts found.',
                 )
 
-            yield from self.connection_pool.close(seeds=self.seed_connections)
+            old_connection_pool = self.connection_pool
 
             self.set_connections(hosts)
 
-    def close(self):
-        coros = []
+            skip = self.seed_connections | self.connection_pool.orig_connections  # noqa
 
+            yield from old_connection_pool.close(skip=skip)
+
+    def close(self):
         seeds = self.seed_connections - self.connection_pool.orig_connections
 
-        for connection in seeds:
-            coros.append(connection.close())
+        coros = [connection.close() for connection in seeds]
 
         if self.initial_sniff_task is not None:
             self.initial_sniff_task.cancel()
