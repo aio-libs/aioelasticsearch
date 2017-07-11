@@ -120,13 +120,13 @@ class AIOHttpConnectionPool:
 
         return self.connections[0]
 
-    def close(self, eastablished_connections=None):
-        if eastablished_connections is None:
-            eastablished_connections = set()
+    def close(self, skip=None):
+        if skip is None:
+            skip = set()
 
         coros = [
             connection.close() for connection in
-            self.orig_connections - eastablished_connections
+            self.orig_connections - skip
         ]
 
         return asyncio.gather(*coros, loop=self.loop)

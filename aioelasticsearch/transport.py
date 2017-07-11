@@ -194,17 +194,14 @@ class AIOHttpTransport(Transport):
 
             self.set_connections(hosts)
 
-            yield from old_connection_pool.close(
-                eastablished_connections=self.seed_connections | self.connection_pool.orig_connections,  # noqa
-            )
+            skip = self.seed_connections | self.connection_pool.orig_connections  # noqa
+
+            yield from old_connection_pool.close(skip=skip)
 
     def close(self):
-        coros = []
-
         seeds = self.seed_connections - self.connection_pool.orig_connections
 
-        for connection in seeds:
-            coros.append(connection.close())
+        coros = [connection.close() for connection in seeds]
 
         if self.initial_sniff_task is not None:
             self.initial_sniff_task.cancel()
