@@ -150,11 +150,11 @@ class DummyConnectionPool(AIOHttpConnectionPool):
     def get_connection(self):
         return self.connection
 
-    def close(self, established_connections=None):
-        if established_connections is None:
-            established_connections = set()
+    def close(self, skip=None):
+        if skip is None:
+            skip = set()
 
-        if self.connection in established_connections:
+        if self.connection in skip:
             fut = create_future(loop=self.loop)
             fut.set_result(None)
             return fut
