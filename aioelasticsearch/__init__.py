@@ -13,7 +13,7 @@ from .pool import AIOHttpConnectionPool  # noqa # isort:skip
 from .transport import AIOHttpTransport  # isort:skip
 
 
-__version__ = '0.1.7'
+__version__ = '0.1.8'
 
 
 class Elasticsearch(_Elasticsearch):
