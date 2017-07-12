@@ -111,12 +111,6 @@ class AIOHttpTransport(Transport):
             kwargs.update(host)
             kwargs['loop'] = self.loop
 
-            if 'scheme' in host and host['scheme'] != self.connection_class.transport_schema:  # noqa
-                raise ImproperlyConfigured(
-                    'Scheme specified in connection (%s) is not the same as the connection class (%s) specifies (%s).' % (  # noqa
-                        host['scheme'], self.connection_class.__name__, self.connection_class.transport_schema,  # noqa
-                    ),
-                )
             return self.connection_class(**kwargs)
 
         connections = map(_create_connection, hosts)
