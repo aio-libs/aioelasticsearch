@@ -3,8 +3,7 @@ import logging
 from itertools import chain
 
 from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
-                                      ImproperlyConfigured, SerializationError,
-                                      TransportError)
+                                      SerializationError, TransportError)
 from elasticsearch.serializer import (DEFAULT_SERIALIZERS, Deserializer,
                                       JSONSerializer)
 from elasticsearch.transport import Transport, get_host_info
