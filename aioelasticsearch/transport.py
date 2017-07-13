@@ -3,8 +3,7 @@ import logging
 from itertools import chain
 
 from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
-                                      ImproperlyConfigured, SerializationError,
-                                      TransportError)
+                                      SerializationError, TransportError)
 from elasticsearch.serializer import (DEFAULT_SERIALIZERS, Deserializer,
                                       JSONSerializer)
 from elasticsearch.transport import Transport, get_host_info
@@ -111,12 +110,6 @@ class AIOHttpTransport(Transport):
             kwargs.update(host)
             kwargs['loop'] = self.loop
 
-            if 'scheme' in host and host['scheme'] != self.connection_class.transport_schema:  # noqa
-                raise ImproperlyConfigured(
-                    'Scheme specified in connection (%s) is not the same as the connection class (%s) specifies (%s).' % (  # noqa
-                        host['scheme'], self.connection_class.__name__, self.connection_class.transport_schema,  # noqa
-                    ),
-                )
             return self.connection_class(**kwargs)
 
         connections = map(_create_connection, hosts)
@@ -312,7 +305,7 @@ class AIOHttpTransport(Transport):
 
         if body is not None:
             try:
-                body = body.encode('utf-8')
+                body = body.encode('utf-8', 'surrogatepass')
             except (UnicodeDecodeError, AttributeError):
                 # bytes/str - no need to re-encode
                 pass
