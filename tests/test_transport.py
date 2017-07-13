@@ -25,7 +25,7 @@ class DummyConnection(AIOHttpConnection):
 @pytest.mark.run_loop
 @asyncio.coroutine
 def test_body_surrogates_replaced_encoded_into_bytes(loop):
-    t = AIOHttpTransport([], connection_class=DummyConnection, loop=loop)
+    t = AIOHttpTransport([{}], connection_class=DummyConnection, loop=loop)
 
     yield from t.perform_request('GET', '/', body='你好\uda6a')
     conn = yield from t.get_connection()
