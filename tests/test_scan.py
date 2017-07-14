@@ -1,7 +1,7 @@
 import asyncio
 
 import pytest
-from aioelasticsearch import NotFoundError
+from aioelasticsearch.exceptions import NotFoundError
 from aioelasticsearch.helpers import Scan
 
 from tests.utils import populate
@@ -81,6 +81,7 @@ def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
     assert scroll_sizes == expected_scroll_sizes
 
 
+
 @pytest.mark.run_loop
 @asyncio.coroutine
 def test_scan_has_more(loop, es):
@@ -114,6 +115,51 @@ def test_scan_has_more(loop, es):
 
         finally:
             yield from scan.clear_scroll()
+
+
+@pytest.mark.run_loop
+@asyncio.coroutine
+def test_scan_no_mask_index(loop, es):
+    index = 'undefined-*'
+    doc_type = 'any'
+    scroll_size = 3
+
+    with Scan(
+        es,
+        index=index,
+        doc_type=doc_type,
+        size=scroll_size,
+        loop=loop,
+    ) as scan:
+        try:
+            yield from scan.scroll()
+
+            assert scan.scroll_id is None
+            assert not scan.has_more
+            assert scan.total == 0
+        finally:
+            yield from scan.clear_scroll()
+
+
+@pytest.mark.run_loop
+@asyncio.coroutine
+def test_scan_no_index(loop, es):
+    index = 'undefined'
+    doc_type = 'any'
+    scroll_size = 3
+
+    with pytest.raises(NotFoundError):
+        with Scan(
+            es,
+            index=index,
+            doc_type=doc_type,
+            size=scroll_size,
+            loop=loop,
+        ) as scan:
+            try:
+                yield from scan.scroll()
+            finally:
+                yield from scan.clear_scroll()
 
 
 @pytest.mark.run_loop
