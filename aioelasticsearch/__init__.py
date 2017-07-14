@@ -1,7 +1,6 @@
 import asyncio
 
 from elasticsearch import Elasticsearch as _Elasticsearch  # isort:skip
-from elasticsearch.exceptions import *  # noqa # isort:skip
 
 from elasticsearch.connection_pool import (  # noqa # isort:skip
     ConnectionSelector, RoundRobinSelector,
@@ -9,6 +8,7 @@ from elasticsearch.connection_pool import (  # noqa # isort:skip
 from elasticsearch.serializer import JSONSerializer  # noqa # isort:skip
 
 from .compat import PY_350  # isort:skip
+from .exceptions import *  # noqa # isort:skip
 from .pool import AIOHttpConnectionPool  # noqa # isort:skip
 from .transport import AIOHttpTransport  # isort:skip
 

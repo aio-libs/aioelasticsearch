@@ -4,9 +4,9 @@ import logging
 import random
 
 from elasticsearch.connection_pool import ConnectionSelector
-from elasticsearch.exceptions import ImproperlyConfigured
 
 from .compat import create_future
+from .exceptions import ImproperlyConfigured
 
 logger = logging.getLogger('elasticsearch')
 

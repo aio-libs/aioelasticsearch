@@ -9,9 +9,9 @@ if AIOHTTP_2:
 else:
     from aiohttp.errors import ClientError
 
+from .exceptions import ConnectionError, ConnectionTimeout, SSLError  # noqa # isort:skip
+
 from elasticsearch.connection import Connection  # noqa # isort:skip
-from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,  # noqa # isort:skip
-                                      SSLError)
 from yarl import URL  # noqa # isort:skip
 
 

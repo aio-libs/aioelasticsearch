@@ -2,14 +2,14 @@ import asyncio
 import logging
 from itertools import chain
 
-from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
-                                      SerializationError, TransportError)
 from elasticsearch.serializer import (DEFAULT_SERIALIZERS, Deserializer,
                                       JSONSerializer)
 from elasticsearch.transport import Transport, get_host_info
 
 from .compat import ensure_future
 from .connection import AIOHttpConnection
+from .exceptions import (ConnectionError, ConnectionTimeout,
+                         SerializationError, TransportError)
 from .pool import AIOHttpConnectionPool, DummyConnectionPool
 
 logger = logging.getLogger('elasticsearch')
