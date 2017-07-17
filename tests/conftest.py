@@ -16,12 +16,11 @@ def loop(request):
 
     request.addfinalizer(lambda: asyncio.set_event_loop(None))
 
-    try:
-        yield loop
-    finally:
-        loop.call_soon(loop.stop)
-        loop.run_forever()
-        loop.close()
+    yield loop
+
+    loop.call_soon(loop.stop)
+    loop.run_forever()
+    loop.close()
 
 
 @pytest.fixture
@@ -42,11 +41,10 @@ def es(loop):
 
     loop.run_until_complete(_flush_es())
 
-    try:
-        yield es
-    finally:
-        loop.run_until_complete(_flush_es())
-        loop.run_until_complete(es.close())
+    yield es
+
+    loop.run_until_complete(_flush_es())
+    loop.run_until_complete(es.close())
 
 
 @pytest.mark.tryfirst
