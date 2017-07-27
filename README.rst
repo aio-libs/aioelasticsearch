@@ -9,6 +9,9 @@ aioelasticsearch
 .. image:: https://img.shields.io/pypi/v/aioelasticsearch.svg
     :target: https://pypi.python.org/pypi/aioelasticsearch
 
+.. image:: https://codecov.io/gh/wikibusiness/aioelasticsearch/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/wikibusiness/aioelasticsearch
+
 Installation
 ------------
 
