@@ -4,7 +4,7 @@ appnope==0.1.0
 async-timeout==1.2.1
 chardet==3.0.4
 coverage==4.4.1
-decorator==4.0.11
+decorator==4.1.2
 elasticsearch==5.4.0
 flake8==3.3.0
 ipdb==0.10.2
