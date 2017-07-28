@@ -71,8 +71,7 @@ class AIOHttpConnection(Connection):
     def close(self):
         return self.session.close()
 
-    @asyncio.coroutine
-    def perform_request(
+    async def perform_request(
         self,
         method,
         url,
@@ -89,14 +88,14 @@ class AIOHttpConnection(Connection):
         response = None
         try:
             with aiohttp.Timeout(timeout or self.timeout, loop=self.loop):
-                response = yield from self.session.request(
+                response = await self.session.request(
                     method,
                     url,
                     data=body,
                     headers=self.headers,
                     timeout=None,
                 )
-                raw_data = yield from response.text()
+                raw_data = await response.text()
 
             duration = self.loop.time() - start
 
@@ -141,7 +140,7 @@ class AIOHttpConnection(Connection):
 
         finally:
             if response is not None:
-                yield from response.release()
+                await response.release()
 
         # raise errors based on http status codes
         # let the client handle those if needed

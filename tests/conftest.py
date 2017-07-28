@@ -2,7 +2,6 @@ import asyncio
 
 import pytest
 from aioelasticsearch import Elasticsearch
-from aioelasticsearch.compat import PY_350
 
 
 @pytest.fixture
@@ -73,7 +72,3 @@ def pytest_pyfunc_call(pyfuncitem):
         loop.run_until_complete(pyfuncitem.obj(**testargs))
 
         return True
-
-
-def pytest_ignore_collect(path, config):
-    return 'py35' in str(path) and not PY_350
