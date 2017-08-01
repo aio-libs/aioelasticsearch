@@ -33,8 +33,8 @@ class Elasticsearch(_Elasticsearch):
 
         super().__init__(hosts, transport_class=transport_class, **kwargs)
 
-    def close(self):
-        return self.transport.close()
+    async def close(self):
+        await self.transport.close()
 
     async def __aenter__(self):  # noqa
         return self

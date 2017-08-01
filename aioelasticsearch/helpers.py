@@ -2,6 +2,7 @@ import asyncio
 
 from .compat import PY_352, create_future
 
+
 class Scan:
 
     def __init__(
@@ -41,31 +42,6 @@ class Scan:
         self.__scroll_hits = None
         self.__scroll_hits_found = False
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc_info):
-        pass
-
-    def __iter__(self):  # noqa
-        return self
-
-    def __next__(self):  # noqa
-        assert not self.__initial
-
-        if self.__scroll_hits is not None and self.__scroll_hits_found:
-            fut = create_future(loop=self._loop)
-            fut.set_result(self.__scroll_hits)
-
-            self.__scroll_hits = None
-
-            return fut
-
-        if not self.has_more:
-            raise StopIteration
-
-        return self.search()
-
     async def __aenter__(self):  # noqa
         await self.scroll()
 
@@ -74,7 +50,8 @@ class Scan:
     async def __aexit__(self, *exc_info):  # noqa
         await self.clear_scroll()
 
-    __aiter__ = __iter__
+    def __aiter__(self):
+        return self
 
     if not PY_352:
         __aiter__ = asyncio.coroutine(__aiter__)
