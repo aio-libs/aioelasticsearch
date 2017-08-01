@@ -4,8 +4,9 @@ import uuid
 
 import elasticsearch
 import pytest
-from aioelasticsearch import Elasticsearch
 from docker import from_env as docker_from_env
+
+from aioelasticsearch import Elasticsearch
 
 
 @pytest.fixture

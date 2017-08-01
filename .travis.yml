@@ -5,14 +5,9 @@ services:
 python:
   - "3.5"
   - "3.6"
-env:
-  - AIOHTTP="2"
-  - AIOHTTP="1"
 install:
-  - pip install -r requirements.txt
-before_script:
-  - export TOXENV=py`python -c 'import sys; print("".join(map(str, sys.version_info[:2])))'`-aiohttp$AIOHTTP
-  - echo "$TOXENV"
+  - pip install tox tox-travis codecov
+script:
   - tox
 after_success:
   - codecov
