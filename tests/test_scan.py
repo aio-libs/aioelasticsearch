@@ -1,15 +1,10 @@
-import asyncio
-
 import pytest
 from aioelasticsearch.exceptions import NotFoundError
 from aioelasticsearch.helpers import Scan
 
-from tests.utils import populate
-
 
 @pytest.mark.run_loop
-@asyncio.coroutine
-def test_scan_initial_raises(loop, es):
+async def test_scan_initial_raises(loop, es):
     scan = Scan(es, loop=loop)
 
     with pytest.raises(AssertionError):
@@ -25,7 +20,7 @@ def test_scan_initial_raises(loop, es):
         next(scan)
 
     with pytest.raises(AssertionError):
-        yield from scan.search()
+        await scan.search()
 
 
 @pytest.mark.parametrize('n,scroll_size', [
@@ -38,13 +33,12 @@ def test_scan_initial_raises(loop, es):
     (6, 1),  # 6 scrolls
 ])
 @pytest.mark.run_loop
-@asyncio.coroutine
-def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
+async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size, populate):
     index = 'test_aioes'
     doc_type = 'type_1'
     body = {'foo': 1}
 
-    yield from populate(es, index, doc_type, n, body, loop=loop)
+    await populate(es, index, doc_type, n, body)
 
     ids = set()
     data = []
@@ -57,10 +51,10 @@ def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
         loop=loop,
     ) as scan:
         try:
-            yield from scan.scroll()
+            await scan.scroll()
 
             for scroll in scan:
-                scroll = yield from scroll
+                scroll = await scroll
 
                 data.append(scroll)
 
@@ -70,7 +64,7 @@ def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
             # check number of unique doc ids
             assert len(ids) == n == scan.total
         finally:
-            yield from scan.clear_scroll()
+            await scan.clear_scroll()
 
     # check number of docs in a scroll
     expected_scroll_sizes = [scroll_size] * (n // scroll_size)
@@ -82,15 +76,14 @@ def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):
 
 
 @pytest.mark.run_loop
-@asyncio.coroutine
-def test_scan_has_more(loop, es):
+async def test_scan_has_more(loop, es, populate):
     index = 'test_aioes'
     doc_type = 'type_1'
     n = 10
     scroll_size = 3
     body = {'foo': 1}
 
-    yield from populate(es, index, doc_type, n, body, loop=loop)
+    await populate(es, index, doc_type, n, body)
 
     with Scan(
         es,
@@ -100,12 +93,12 @@ def test_scan_has_more(loop, es):
         loop=loop,
     ) as scan:
         try:
-            yield from scan.scroll()
+            await scan.scroll()
 
             assert scan.has_more
 
             for scroll in scan:
-                yield from scroll
+                await scroll
 
             with pytest.raises(StopIteration):
                 next(scan)
@@ -113,12 +106,11 @@ def test_scan_has_more(loop, es):
             assert not scan.has_more
 
         finally:
-            yield from scan.clear_scroll()
+            await scan.clear_scroll()
 
 
 @pytest.mark.run_loop
-@asyncio.coroutine
-def test_scan_no_mask_index(loop, es):
+async def test_scan_no_mask_index(loop, es):
     index = 'undefined-*'
     doc_type = 'any'
     scroll_size = 3
@@ -131,18 +123,17 @@ def test_scan_no_mask_index(loop, es):
         loop=loop,
     ) as scan:
         try:
-            yield from scan.scroll()
+            await scan.scroll()
 
             assert scan.scroll_id is None
             assert not scan.has_more
             assert scan.total == 0
         finally:
-            yield from scan.clear_scroll()
+            await scan.clear_scroll()
 
 
 @pytest.mark.run_loop
-@asyncio.coroutine
-def test_scan_no_index(loop, es):
+async def test_scan_no_index(loop, es):
     index = 'undefined'
     doc_type = 'any'
     scroll_size = 3
@@ -156,21 +147,20 @@ def test_scan_no_index(loop, es):
             loop=loop,
         ) as scan:
             try:
-                yield from scan.scroll()
+                await scan.scroll()
             finally:
-                yield from scan.clear_scroll()
+                await scan.clear_scroll()
 
 
 @pytest.mark.run_loop
-@asyncio.coroutine
-def test_scan_clear_scroll(loop, es):
+async def test_scan_clear_scroll(loop, es, populate):
     index = 'test_aioes'
     doc_type = 'type_1'
     n = 10
     scroll_size = 3
     body = {'foo': 1}
 
-    yield from populate(es, index, doc_type, n, body, loop=loop)
+    await populate(es, index, doc_type, n, body)
 
     with Scan(
         es,
@@ -179,10 +169,10 @@ def test_scan_clear_scroll(loop, es):
         size=scroll_size,
         loop=loop,
     ) as scan:
-        yield from scan.scroll()
+        await scan.scroll()
 
-        yield from scan.clear_scroll()
+        await scan.clear_scroll()
 
         with pytest.raises(NotFoundError):
             for scroll in scan:
-                yield from scroll
+                await scroll
