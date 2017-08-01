@@ -1,5 +1,4 @@
 import pytest
-
 from aioelasticsearch import AIOHttpTransport
 from aioelasticsearch.connection import AIOHttpConnection
 

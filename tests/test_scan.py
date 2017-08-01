@@ -1,5 +1,4 @@
 import pytest
-
 from aioelasticsearch.exceptions import NotFoundError
 from aioelasticsearch.helpers import Scan
 

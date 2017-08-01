@@ -1,5 +1,4 @@
 import pytest
-
 from aioelasticsearch.helpers import Scan
 
 
