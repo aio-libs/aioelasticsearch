@@ -5,7 +5,7 @@ from aioelasticsearch.helpers import Scan
 
 
 @pytest.mark.run_loop
-async def test_scan_initial_raises(loop, es):  # noqa
+async def test_scan_initial_raises(loop, es):
     scan = Scan(es, loop=loop)
 
     with pytest.raises(AssertionError):
@@ -38,8 +38,7 @@ async def test_scan_initial_raises(loop, es):  # noqa
     (6, 1),  # 6 scrolls
 ])
 @pytest.mark.run_loop
-async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size,
-                                          populate):
+async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size, populate):
     index = 'test_aioes'
     doc_type = 'type_1'
     body = {'foo': 1}
@@ -75,7 +74,6 @@ async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size,
     assert scroll_sizes == expected_scroll_sizes
 
 
-
 @pytest.mark.run_loop
 async def test_scan_has_more(loop, es, populate):
     index = 'test_aioes'
@@ -101,7 +99,6 @@ async def test_scan_has_more(loop, es, populate):
             await scroll
 
         assert not scan.has_more
-
 
 
 @pytest.mark.run_loop
@@ -138,3 +135,29 @@ async def test_scan_no_index(loop, es):
         ) as scan:
             async for scroll in scan:
                 scroll
+
+
+@pytest.mark.run_loop
+async def test_scan_clear_scroll(loop, es, populate):
+    index = 'test_aioes'
+    doc_type = 'type_1'
+    n = 10
+    scroll_size = 3
+    body = {'foo': 1}
+
+    await populate(es, index, doc_type, n, body)
+
+    with Scan(
+        es,
+        index=index,
+        doc_type=doc_type,
+        size=scroll_size,
+        loop=loop,
+    ) as scan:
+        await scan.scroll()
+
+        await scan.clear_scroll()
+
+        with pytest.raises(NotFoundError):
+            for scroll in scan:
+                await scroll
