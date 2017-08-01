@@ -1,7 +1,6 @@
 import pytest
-from aioelasticsearch.helpers import Scan
 
-from tests.utils import populate
+from aioelasticsearch.helpers import Scan
 
 
 @pytest.mark.run_loop
@@ -38,12 +37,13 @@ async def test_scan_initial_raises(loop, es):  # noqa
     (6, 1),  # 6 scrolls
 ])
 @pytest.mark.run_loop
-async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size):  # noqa
+async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size,
+                                          populate):
     index = 'test_aioes'
     doc_type = 'type_1'
     body = {'foo': 1}
 
-    await populate(es, index, doc_type, n, body, loop=loop)
+    await populate(es, index, doc_type, n, body)
 
     ids = set()
     data = []

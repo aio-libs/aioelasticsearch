@@ -1,11 +1,8 @@
-import asyncio
-
 import pytest
 
 
 @pytest.mark.run_loop
-@asyncio.coroutine
-def test_ping(es):
-    ping = yield from es.ping()
+async def test_ping(es):
+    ping = await es.ping()
 
     assert ping

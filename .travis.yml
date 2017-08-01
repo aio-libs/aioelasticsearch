@@ -1,30 +1,13 @@
-dist: trusty
 language: python
-sudo: true
-addons:
-  apt:
-    packages:
-      - oracle-java8-set-default
+sudo: false
+services:
+  - docker
 python:
-  - "3.4"
   - "3.5"
   - "3.6"
-env:
-  - ES="5.5.0" AIOHTTP="2"
-  - ES="5.5.0" AIOHTTP="1"
 install:
-  - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ES.deb && sudo dpkg -i --force-confnew elasticsearch-$ES.deb && sudo service elasticsearch start
-  - pip install -U setuptools
-  - pip install -U pip
-  - pip install -U wheel
-  - pip install -U tox
-  - pip install -U codecov
-before_script:
-  # slow elasticsearch service
-  - echo 'waiting for elasticsearch is up'; while ! curl --output /dev/null --silent --head --fail http://127.0.0.1:9200; do sleep 1; echo -n '.'; done
+  - pip install tox tox-travis codecov
 script:
-  - export TOXENV=py`python -c 'import sys; print("".join(map(str, sys.version_info[:2])))'`-aiohttp$AIOHTTP
-  - echo "$TOXENV"
   - tox
 after_success:
   - codecov
