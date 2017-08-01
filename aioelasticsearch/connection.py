@@ -2,7 +2,6 @@ import asyncio
 import ssl
 
 import aiohttp
-
 from aioelasticsearch.compat import AIOHTTP_2
 
 if AIOHTTP_2:
