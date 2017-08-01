@@ -1,6 +1,6 @@
 import asyncio
 
-from .compat import PY_352, create_future
+from .compat import PY_352
 
 
 class Scan:
