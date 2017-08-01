@@ -83,7 +83,7 @@ def es_server(docker, session_id, es_tag, request):
         finally:
             es.transport.close()
     else:
-        pytest.fail("Cannot start postgres server")
+        pytest.fail("Cannot start elastic server")
     ret = {'container': container,
            'host': host,
            'port': 9200}
