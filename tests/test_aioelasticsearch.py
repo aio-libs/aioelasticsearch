@@ -27,4 +27,4 @@ async def test_elastic_default_loop(es, loop, es_server):
     async with Elasticsearch(hosts=[{'host': es_server['host'],
                                      'port': es_server['port']}],
                              http_auth=':'.join(es_server['auth'])) as es1:
-        assert es1._loop is loop
+        assert es1.loop is loop
