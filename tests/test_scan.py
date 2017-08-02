@@ -147,7 +147,7 @@ async def test_scan_clear_scroll(loop, es, populate):
 
     await populate(es, index, doc_type, n, body)
 
-    with Scan(
+    async with Scan(
         es,
         index=index,
         doc_type=doc_type,
