@@ -22,9 +22,6 @@ async def test_scan_initial_raises(loop, es):
         scan.has_more
 
     with pytest.raises(AssertionError):
-        next(scan)
-
-    with pytest.raises(AssertionError):
         await scan.search()
 
 
@@ -91,12 +88,10 @@ async def test_scan_has_more(loop, es, populate):
         size=scroll_size,
         loop=loop,
     ) as scan:
-        await scan.scroll()
-
         assert scan.has_more
 
         async for scroll in scan:
-            await scroll
+            scroll
 
         assert not scan.has_more
 
@@ -135,29 +130,3 @@ async def test_scan_no_index(loop, es):
         ) as scan:
             async for scroll in scan:
                 scroll
-
-
-@pytest.mark.run_loop
-async def test_scan_clear_scroll(loop, es, populate):
-    index = 'test_aioes'
-    doc_type = 'type_1'
-    n = 10
-    scroll_size = 3
-    body = {'foo': 1}
-
-    await populate(es, index, doc_type, n, body)
-
-    async with Scan(
-        es,
-        index=index,
-        doc_type=doc_type,
-        size=scroll_size,
-        loop=loop,
-    ) as scan:
-        await scan.scroll()
-
-        await scan.clear_scroll()
-
-        with pytest.raises(NotFoundError):
-            for scroll in scan:
-                await scroll
