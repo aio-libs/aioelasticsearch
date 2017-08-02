@@ -2,6 +2,7 @@ import asyncio
 import ssl
 
 import aiohttp
+import async_timeout
 
 from aiohttp import ClientError
 
@@ -83,7 +84,8 @@ class AIOHttpConnection(Connection):
         start = self.loop.time()
         response = None
         try:
-            with aiohttp.Timeout(timeout or self.timeout, loop=self.loop):
+            with async_timeout.timeout(timeout or self.timeout,
+                                       loop=self.loop):
                 response = await self.session.request(
                     method,
                     url,

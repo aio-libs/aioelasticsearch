@@ -85,7 +85,8 @@ def es_server(docker, session_id, es_tag, request):
         pytest.fail("Cannot start elastic server")
     ret = {'container': container,
            'host': host,
-           'port': 9200}
+           'port': 9200,
+           'auth': ('elastic', 'changeme')}
     yield ret
 
     container.kill()
@@ -96,7 +97,7 @@ def es_server(docker, session_id, es_tag, request):
 def es(loop, es_server):
     es = Elasticsearch(loop=loop, hosts=[{'host': es_server['host'],
                                           'port': es_server['port']}],
-                       http_auth=('elastic', 'changeme'))
+                       http_auth=es_server['auth'])
 
     def _flush_es():
         delete_template = es.transport.perform_request(

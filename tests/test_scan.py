@@ -1,7 +1,15 @@
+import asyncio
+
 import pytest
 
 from aioelasticsearch import NotFoundError
 from aioelasticsearch.helpers import Scan
+
+
+def test_scan_default_loop(es, loop):
+    asyncio.set_event_loop(loop)
+    scan = Scan(es)
+    assert scan._loop is loop
 
 
 @pytest.mark.run_loop
