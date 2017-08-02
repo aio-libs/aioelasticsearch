@@ -1,9 +1,6 @@
 import asyncio
 
-from .compat import PY_350, PY_352, create_future
-
-if not PY_350:
-    StopAsyncIteration = None  # noqa
+from .compat import PY_352
 
 
 class Scan:
@@ -45,62 +42,34 @@ class Scan:
         self.__scroll_hits = None
         self.__scroll_hits_found = False
 
-    def __enter__(self):
+    async def __aenter__(self):  # noqa
+        await self.scroll()
+
         return self
 
-    def __exit__(self, *exc_info):
-        pass
+    async def __aexit__(self, *exc_info):  # noqa
+        await self.clear_scroll()
 
-    def __iter__(self):  # noqa
+    def __aiter__(self):
         return self
 
-    def __next__(self):  # noqa
+    if not PY_352:
+        __aiter__ = asyncio.coroutine(__aiter__)
+
+    async def __anext__(self):  # noqa
         assert not self.__initial
 
-        if self.__scroll_hits is not None and self.__scroll_hits_found:
-            fut = create_future(loop=self._loop)
-            fut.set_result(self.__scroll_hits)
+        if self.__scroll_hits is not None:
+            hits = self.__scroll_hits
 
             self.__scroll_hits = None
+        else:
+            hits = await self.search()
 
-            return fut
+        if not hits:
+            raise StopAsyncIteration
 
-        if not self.has_more:
-            raise StopIteration
-
-        return self.search()
-
-    if PY_350:
-        @asyncio.coroutine
-        def __aenter__(self):  # noqa
-            yield from self.scroll()
-
-            return self
-
-        @asyncio.coroutine
-        def __aexit__(self, *exc_info):  # noqa
-            yield from self.clear_scroll()
-
-        __aiter__ = __iter__
-
-        if not PY_352:
-            __aiter__ = asyncio.coroutine(__aiter__)
-
-        @asyncio.coroutine
-        def __anext__(self):  # noqa
-            assert not self.__initial
-
-            if self.__scroll_hits is not None:
-                hits = self.__scroll_hits
-
-                self.__scroll_hits = None
-            else:
-                hits = yield from self.search()
-
-            if not hits:
-                raise StopAsyncIteration
-
-            return hits
+        return hits
 
     @property
     def scroll_id(self):
@@ -126,11 +95,10 @@ class Scan:
 
         return True
 
-    @asyncio.coroutine
-    def scroll(self):
+    async def scroll(self):
         assert self.__initial
 
-        resp = yield from self._es.search(
+        resp = await self._es.search(
             body=self._query,
             scroll=self._scroll,
             size=self._size,
@@ -155,11 +123,10 @@ class Scan:
 
         return hits
 
-    @asyncio.coroutine
-    def search(self):
+    async def search(self):
         assert not self.__initial
 
-        resp = yield from self._es.scroll(
+        resp = await self._es.scroll(
             self._scroll_id,
             scroll=self._scroll,
         )
@@ -174,9 +141,8 @@ class Scan:
 
         return hits
 
-    @asyncio.coroutine
-    def clear_scroll(self):
+    async def clear_scroll(self):
         if self._scroll_id is not None and self._clear_scroll:
-            yield from self._es.clear_scroll(
+            await self._es.clear_scroll(
                 body={'scroll_id': [self._scroll_id]},
             )

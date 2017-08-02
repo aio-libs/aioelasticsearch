@@ -129,8 +129,7 @@ class AIOHttpTransport(Transport):
                 **self.kwargs
             )
 
-    @asyncio.coroutine
-    def _get_sniff_data(self, initial=False):
+    async def _get_sniff_data(self, initial=False):
         previous_sniff = self.last_sniff
 
         tried = set()
@@ -150,7 +149,7 @@ class AIOHttpTransport(Transport):
                 try:
                     # use small timeout for the sniffing request,
                     # should be a fast api call
-                    _, headers, node_info = yield from connection.perform_request(  # noqa
+                    _, headers, node_info = await connection.perform_request(  # noqa
                         'GET',
                         '/_nodes/_all/http',
                         timeout=self.sniff_timeout if not initial else None,
@@ -171,10 +170,9 @@ class AIOHttpTransport(Transport):
 
         return list(node_info['nodes'].values())
 
-    @asyncio.coroutine
-    def sniff_hosts(self, initial=False):
-        with (yield from self._connection_pool_lock):
-            node_info = yield from self._get_sniff_data(initial)
+    async def sniff_hosts(self, initial=False):
+        async with self._connection_pool_lock:
+            node_info = await self._get_sniff_data(initial)
             hosts = list(filter(None, (self._get_host_info(n) for n in node_info)))  # noqa
             # we weren't able to get any nodes, maybe using an incompatible
             # transport_schema or host_info_callback blocked all - raise error.
@@ -189,7 +187,7 @@ class AIOHttpTransport(Transport):
 
             skip = self.seed_connections | self.connection_pool.orig_connections  # noqa
 
-            yield from old_connection_pool.close(skip=skip)
+            await old_connection_pool.close(skip=skip)
 
     def close(self):
         seeds = self.seed_connections - self.connection_pool.orig_connections
@@ -199,10 +197,9 @@ class AIOHttpTransport(Transport):
         if self.initial_sniff_task is not None:
             self.initial_sniff_task.cancel()
 
-            @asyncio.coroutine
-            def _initial_sniff_wrapper():
+            async def _initial_sniff_wrapper():
                 try:
-                    yield from self.initial_sniff_task
+                    await self.initial_sniff_task
                 except asyncio.CancelledError:
                     return
 
@@ -212,36 +209,33 @@ class AIOHttpTransport(Transport):
 
         return asyncio.gather(*coros, loop=self.loop)
 
-    @asyncio.coroutine
-    def get_connection(self):
+    async def get_connection(self):
         if self.initial_sniff_task is not None:
-            yield from self.initial_sniff_task
+            await self.initial_sniff_task
 
         if self.sniffer_timeout:
             if self.loop.time() >= self.last_sniff + self.sniffer_timeout:
-                yield from self.sniff_hosts()
+                await self.sniff_hosts()
 
-        with (yield from self._connection_pool_lock):
+        async with self._connection_pool_lock:
             return self.connection_pool.get_connection()
 
-    @asyncio.coroutine
-    def mark_dead(self, connection):
+    async def mark_dead(self, connection):
         self.connection_pool.mark_dead(connection)
 
         if self.sniff_on_connection_fail:
-            yield from self.sniff_hosts()
+            await self.sniff_hosts()
 
-    @asyncio.coroutine
-    def _perform_request(
+    async def _perform_request(
         self,
         method, url, params, body,
         ignore=(), timeout=None,
     ):
         for attempt in range(self.max_retries + 1):
-            connection = yield from self.get_connection()
+            connection = await self.get_connection()
 
             try:
-                status, headers, data = yield from connection.perform_request(
+                status, headers, data = await connection.perform_request(
                     method, url, params, body,
                     ignore=ignore, timeout=timeout,
                 )
@@ -258,7 +252,7 @@ class AIOHttpTransport(Transport):
                     retry = True
 
                 if retry:
-                    yield from self.mark_dead(connection)
+                    await self.mark_dead(connection)
 
                     if attempt == self.max_retries:
                         raise

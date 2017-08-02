@@ -78,29 +78,17 @@ Coroutine version of scroll
     from aioelasticsearch import Elasticsearch
     from aioelasticsearch.helpers import Scan
 
-    @asyncio.coroutine
-    def go():
-        es = Elasticsearch()
-        try:
-            with Scan(
-                es,
-                index='index',
-                doc_type='doc_type',
-                query={},
-            ) as scan:
-                try:
-                    yield from scan.scroll()
-                    print(scan.total)
+    async def go():
+        async with Elasticsearch() as es:
+            async with Scan(es,
+                            index='index',
+                            doc_type='doc_type',
+                            query={}) as scan:
+                print(scan.total)
 
-                    for scroll in scan:
-                        scroll = yield from scroll
-
-                        for doc in scroll:
-                            print(doc['_source'])
-                finally:
-                    yield from scan.clear_scroll()
-        finally:
-            yield from es.close()
+                async for doc in scan:
+                    for doc in scroll:
+                        print(doc['_source'])
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(go())

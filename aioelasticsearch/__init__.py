@@ -6,7 +6,6 @@ from elasticsearch.connection_pool import (ConnectionSelector, # noqa # isort:sk
                                            RoundRobinSelector)
 from elasticsearch.serializer import JSONSerializer  # noqa # isort:skip
 
-from .compat import PY_350  # noqa # isort:skip
 from .exceptions import *  # noqa # isort:skip
 from .pool import AIOHttpConnectionPool  # noqa # isort:skip
 from .transport import AIOHttpTransport  # noqa # isort:skip
@@ -34,13 +33,11 @@ class Elasticsearch(_Elasticsearch):
 
         super().__init__(hosts, transport_class=transport_class, **kwargs)
 
-    def close(self):
-        return self.transport.close()
+    async def close(self):
+        await self.transport.close()
 
-    if PY_350:
-        @asyncio.coroutine
-        def __aenter__(self):  # noqa
-            return self
+    async def __aenter__(self):  # noqa
+        return self
 
-        def __aexit__(self, *exc_info):  # noqa
-            return self.close()
+    async def __aexit__(self, *exc_info):  # noqa
+        await self.close()

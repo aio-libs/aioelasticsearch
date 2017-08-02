@@ -1,12 +1,16 @@
 import pytest
 
-from aioelasticsearch.exceptions import NotFoundError
+from aioelasticsearch import NotFoundError
 from aioelasticsearch.helpers import Scan
 
 
 @pytest.mark.run_loop
 async def test_scan_initial_raises(loop, es):
     scan = Scan(es, loop=loop)
+
+    with pytest.raises(AssertionError):
+        async for scroll in scan:  # noqa
+            pass
 
     with pytest.raises(AssertionError):
         scan.scroll_id
@@ -16,9 +20,6 @@ async def test_scan_initial_raises(loop, es):
 
     with pytest.raises(AssertionError):
         scan.has_more
-
-    with pytest.raises(AssertionError):
-        next(scan)
 
     with pytest.raises(AssertionError):
         await scan.search()
@@ -44,28 +45,22 @@ async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size, populate):
     ids = set()
     data = []
 
-    with Scan(
+    async with Scan(
         es,
         index=index,
         doc_type=doc_type,
         size=scroll_size,
         loop=loop,
     ) as scan:
-        try:
-            await scan.scroll()
 
-            for scroll in scan:
-                scroll = await scroll
+        async for scroll in scan:
+            data.append(scroll)
 
-                data.append(scroll)
+            for doc in scroll:
+                ids.add(doc['_id'])
 
-                for doc in scroll:
-                    ids.add(doc['_id'])
-
-            # check number of unique doc ids
-            assert len(ids) == n == scan.total
-        finally:
-            await scan.clear_scroll()
+        # check number of unique doc ids
+        assert len(ids) == n == scan.total
 
     # check number of docs in a scroll
     expected_scroll_sizes = [scroll_size] * (n // scroll_size)
@@ -86,28 +81,19 @@ async def test_scan_has_more(loop, es, populate):
 
     await populate(es, index, doc_type, n, body)
 
-    with Scan(
+    async with Scan(
         es,
         index=index,
         doc_type=doc_type,
         size=scroll_size,
         loop=loop,
     ) as scan:
-        try:
-            await scan.scroll()
+        assert scan.has_more
 
-            assert scan.has_more
+        async for scroll in scan:
+            scroll
 
-            for scroll in scan:
-                await scroll
-
-            with pytest.raises(StopIteration):
-                next(scan)
-
-            assert not scan.has_more
-
-        finally:
-            await scan.clear_scroll()
+        assert not scan.has_more
 
 
 @pytest.mark.run_loop
@@ -116,21 +102,16 @@ async def test_scan_no_mask_index(loop, es):
     doc_type = 'any'
     scroll_size = 3
 
-    with Scan(
+    async with Scan(
         es,
         index=index,
         doc_type=doc_type,
         size=scroll_size,
         loop=loop,
     ) as scan:
-        try:
-            await scan.scroll()
-
-            assert scan.scroll_id is None
-            assert not scan.has_more
-            assert scan.total == 0
-        finally:
-            await scan.clear_scroll()
+        assert scan.scroll_id is None
+        assert not scan.has_more
+        assert scan.total == 0
 
 
 @pytest.mark.run_loop
@@ -140,40 +121,12 @@ async def test_scan_no_index(loop, es):
     scroll_size = 3
 
     with pytest.raises(NotFoundError):
-        with Scan(
+        async with Scan(
             es,
             index=index,
             doc_type=doc_type,
             size=scroll_size,
             loop=loop,
         ) as scan:
-            try:
-                await scan.scroll()
-            finally:
-                await scan.clear_scroll()
-
-
-@pytest.mark.run_loop
-async def test_scan_clear_scroll(loop, es, populate):
-    index = 'test_aioes'
-    doc_type = 'type_1'
-    n = 10
-    scroll_size = 3
-    body = {'foo': 1}
-
-    await populate(es, index, doc_type, n, body)
-
-    with Scan(
-        es,
-        index=index,
-        doc_type=doc_type,
-        size=scroll_size,
-        loop=loop,
-    ) as scan:
-        await scan.scroll()
-
-        await scan.clear_scroll()
-
-        with pytest.raises(NotFoundError):
-            for scroll in scan:
-                await scroll
+            async for scroll in scan:
+                scroll
