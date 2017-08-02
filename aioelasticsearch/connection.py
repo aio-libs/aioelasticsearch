@@ -3,12 +3,7 @@ import ssl
 
 import aiohttp
 
-from aioelasticsearch.compat import AIOHTTP_2
-
-if AIOHTTP_2:
-    from aiohttp import ClientError
-else:
-    from aiohttp.errors import ClientError
+from aiohttp import ClientError
 
 from .exceptions import ConnectionError, ConnectionTimeout, SSLError  # noqa # isort:skip
 
