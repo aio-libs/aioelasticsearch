@@ -5,8 +5,8 @@ from aioelasticsearch.helpers import Scan
 
 
 @pytest.mark.run_loop
-async def test_scan_initial_raises(loop, es):
-    scan = Scan(es, loop=loop)
+async def test_scan_initial_raises(es):
+    scan = Scan(es)
 
     with pytest.raises(AssertionError):
         async for scroll in scan:  # noqa
@@ -35,7 +35,7 @@ async def test_scan_initial_raises(loop, es):
     (6, 1),  # 6 scrolls
 ])
 @pytest.mark.run_loop
-async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size, populate):
+async def test_scan_equal_chunks_for_loop(es, n, scroll_size, populate):
     index = 'test_aioes'
     doc_type = 'type_1'
     body = {'foo': 1}
@@ -50,7 +50,6 @@ async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size, populate):
         index=index,
         doc_type=doc_type,
         size=scroll_size,
-        loop=loop,
     ) as scan:
 
         async for scroll in scan:
@@ -72,7 +71,7 @@ async def test_scan_equal_chunks_for_loop(loop, es, n, scroll_size, populate):
 
 
 @pytest.mark.run_loop
-async def test_scan_has_more(loop, es, populate):
+async def test_scan_has_more(es, populate):
     index = 'test_aioes'
     doc_type = 'type_1'
     n = 10
@@ -86,7 +85,6 @@ async def test_scan_has_more(loop, es, populate):
         index=index,
         doc_type=doc_type,
         size=scroll_size,
-        loop=loop,
     ) as scan:
         assert scan.has_more
 
@@ -97,7 +95,7 @@ async def test_scan_has_more(loop, es, populate):
 
 
 @pytest.mark.run_loop
-async def test_scan_no_mask_index(loop, es):
+async def test_scan_no_mask_index(es):
     index = 'undefined-*'
     doc_type = 'any'
     scroll_size = 3
@@ -107,7 +105,6 @@ async def test_scan_no_mask_index(loop, es):
         index=index,
         doc_type=doc_type,
         size=scroll_size,
-        loop=loop,
     ) as scan:
         assert scan.scroll_id is None
         assert not scan.has_more
@@ -115,7 +112,7 @@ async def test_scan_no_mask_index(loop, es):
 
 
 @pytest.mark.run_loop
-async def test_scan_no_index(loop, es):
+async def test_scan_no_index(es):
     index = 'undefined'
     doc_type = 'any'
     scroll_size = 3
@@ -126,7 +123,6 @@ async def test_scan_no_index(loop, es):
             index=index,
             doc_type=doc_type,
             size=scroll_size,
-            loop=loop,
         ) as scan:
             async for scroll in scan:
                 scroll

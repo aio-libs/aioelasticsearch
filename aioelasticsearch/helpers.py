@@ -13,14 +13,8 @@ class Scan:
         size=1000,
         preserve_order=False,
         clear_scroll=True,
-        *,
-        loop=None,
         **kwargs
     ):
-        if loop is None:
-            loop = asyncio.get_event_loop()
-        self._loop = loop
-
         self._es = es
 
         if not preserve_order:
