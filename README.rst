@@ -68,28 +68,3 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
     loop = asyncio.get_event_loop()
     loop.run_until_complete(go())
     loop.close()
-
-Coroutine version of scroll
-
-.. code-block:: python
-
-    import asyncio
-
-    from aioelasticsearch import Elasticsearch
-    from aioelasticsearch.helpers import Scan
-
-    async def go():
-        async with Elasticsearch() as es:
-            async with Scan(es,
-                            index='index',
-                            doc_type='doc_type',
-                            query={}) as scan:
-                print(scan.total)
-
-                async for doc in scan:
-                    for doc in scroll:
-                        print(doc['_source'])
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(go())
-    loop.close()
