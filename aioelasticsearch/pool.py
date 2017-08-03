@@ -3,25 +3,12 @@ import collections
 import logging
 import random
 
-from elasticsearch.connection_pool import ConnectionSelector
+from elasticsearch.connection_pool import RoundRobinSelector
 
 from .compat import create_future
 from .exceptions import ImproperlyConfigured
 
 logger = logging.getLogger('elasticsearch')
-
-
-class RoundRobinSelector(ConnectionSelector):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self._current = 0
-
-    def select(self, connections):
-        self._current += 1
-        if self._current >= len(connections):
-            self._current = 0
-        return connections[self._current]
 
 
 class AIOHttpConnectionPool:
