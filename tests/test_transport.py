@@ -59,4 +59,4 @@ async def test_sniff_on_start(auto_close, loop, es_server):
                                     sniff_on_start=True, loop=loop))
     assert t.initial_sniff_task is not None
     await t.initial_sniff_task
-    assert t.hosts == {}
+    assert len(t.connection_pool.connections) == 1
