@@ -32,3 +32,14 @@ async def test_body_surrogates_replaced_encoded_into_bytes(loop):
             b'\xe4\xbd\xa0\xe5\xa5\xbd\xed\xa9\xaa') == conn.calls[0][0]
 
     await t.close()
+
+
+@pytest.mark.run_loop
+async def test_custom_serializers(loop):
+    serializer = object()
+    t = AIOHttpTransport([{}], serializers={'test': serializer}, loop=loop)
+    try:
+        assert 'test' in t.deserializer.serializers
+        assert t.deserializer.serializers['test'] is serializer
+    finally:
+        await t.close()
