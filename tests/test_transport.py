@@ -21,8 +21,9 @@ class DummyConnection(AIOHttpConnection):
 
 
 @pytest.mark.run_loop
-async def test_body_surrogates_replaced_encoded_into_bytes(loop):
+async def test_body_surrogates_replaced_encoded_into_bytes(loop, auto_close):
     t = AIOHttpTransport([{}], connection_class=DummyConnection, loop=loop)
+    auto_close(t)
 
     await t.perform_request('GET', '/', body='你好\uda6a')
     conn = await t.get_connection()
@@ -31,25 +32,31 @@ async def test_body_surrogates_replaced_encoded_into_bytes(loop):
     assert ('GET', '/', None,
             b'\xe4\xbd\xa0\xe5\xa5\xbd\xed\xa9\xaa') == conn.calls[0][0]
 
-    await t.close()
-
 
 @pytest.mark.run_loop
-async def test_custom_serializers(loop):
+async def test_custom_serializers(auto_close, loop):
     serializer = object()
-    t = AIOHttpTransport([{}], serializers={'test': serializer}, loop=loop)
-    try:
-        assert 'test' in t.deserializer.serializers
-        assert t.deserializer.serializers['test'] is serializer
-    finally:
-        await t.close()
+    t = auto_close(AIOHttpTransport([{}],
+                                    serializers={'test': serializer},
+                                    loop=loop))
+    assert 'test' in t.deserializer.serializers
+    assert t.deserializer.serializers['test'] is serializer
 
 
 @pytest.mark.run_loop
-async def test_sniff_on_startup(loop):
-    t = AIOHttpTransport([{}], loop=loop)
-    try:
-        assert 'test' in t.deserializer.serializers
-        assert t.deserializer.serializers['test'] is serializer
-    finally:
-        await t.close()
+async def test_no_sniff_on_start(auto_close, loop):
+    t = auto_close(AIOHttpTransport([{}], sniff_on_start=False, loop=loop))
+    assert t.initial_sniff_task is None
+
+
+@pytest.mark.run_loop
+async def test_sniff_on_start(auto_close, loop, es_server):
+    t = auto_close(AIOHttpTransport([{'host': 'unknown_host',
+                                      'port': 9200},
+                                     {'host': es_server['host'],
+                                      'port': es_server['port']}],
+                                    http_auth=es_server['auth'],
+                                    sniff_on_start=True, loop=loop))
+    assert t.initial_sniff_task is not None
+    await t.initial_sniff_task
+    assert t.hosts == {}

@@ -162,7 +162,7 @@ class AIOHttpTransport(Transport):
                         node_info, headers.get('content-type'),
                     )
                     break
-                except (ConnectionError, SerializationError):
+                except (ConnectionError, SerializationError, TransportError):
                     pass
             else:
                 raise TransportError('N/A', 'Unable to sniff hosts.')

@@ -15,8 +15,6 @@ def loop(request):
 
     loop = asyncio.new_event_loop()
 
-    loop.set_debug(True)
-
     yield loop
 
     loop.call_soon(loop.stop)
@@ -117,6 +115,19 @@ def es(loop, es_server):
 
     loop.run_until_complete(_flush_es())
     loop.run_until_complete(es.close())
+
+
+@pytest.fixture
+def auto_close(loop):
+    close_list = []
+
+    def f(arg):
+        close_list.append(arg)
+        return arg
+
+    yield f
+    for arg in close_list:
+        loop.run_until_complete(arg.close())
 
 
 @pytest.mark.tryfirst
