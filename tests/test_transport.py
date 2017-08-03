@@ -43,3 +43,13 @@ async def test_custom_serializers(loop):
         assert t.deserializer.serializers['test'] is serializer
     finally:
         await t.close()
+
+
+@pytest.mark.run_loop
+async def test_sniff_on_startup(loop):
+    t = AIOHttpTransport([{}], loop=loop)
+    try:
+        assert 'test' in t.deserializer.serializers
+        assert t.deserializer.serializers['test'] is serializer
+    finally:
+        await t.close()

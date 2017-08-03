@@ -40,9 +40,11 @@ class AIOHttpTransport(Transport):
         self.loop = loop
 
         _serializers = DEFAULT_SERIALIZERS.copy()
-        # if a serializer has been specified, use it for deserialization as well  # noqa
+        # if a serializer has been specified,
+        # use it for deserialization as well
         _serializers[serializer.mimetype] = serializer
-        # if custom serializers map has been supplied, override the defaults with it  # noqa
+        # if custom serializers map has been supplied,
+        # override the defaults with it
         if serializers:
             _serializers.update(serializers)
         # create a deserializer with our config
@@ -100,7 +102,8 @@ class AIOHttpTransport(Transport):
             # options and identify connections that haven't changed and can be
             # kept around.
             if hasattr(self, 'connection_pool'):
-                existing_connections = self.connection_pool.connection_opts + self.seed_connection_opts  # noqa
+                existing_connections = (self.connection_pool.connection_opts +
+                                        self.seed_connection_opts)
 
                 for (connection, old_host) in existing_connections:
                     if old_host == host:
@@ -149,7 +152,7 @@ class AIOHttpTransport(Transport):
                 try:
                     # use small timeout for the sniffing request,
                     # should be a fast api call
-                    _, headers, node_info = await connection.perform_request(  # noqa
+                    _, headers, node_info = await connection.perform_request(
                         'GET',
                         '/_nodes/_all/http',
                         timeout=self.sniff_timeout if not initial else None,
@@ -173,7 +176,8 @@ class AIOHttpTransport(Transport):
     async def sniff_hosts(self, initial=False):
         async with self._connection_pool_lock:
             node_info = await self._get_sniff_data(initial)
-            hosts = list(filter(None, (self._get_host_info(n) for n in node_info)))  # noqa
+            hosts = (self._get_host_info(n) for n in node_info)
+            hosts = [host for host in hosts if host is not None]
             # we weren't able to get any nodes, maybe using an incompatible
             # transport_schema or host_info_callback blocked all - raise error.
             if not hosts:
@@ -185,7 +189,8 @@ class AIOHttpTransport(Transport):
 
             self.set_connections(hosts)
 
-            skip = self.seed_connections | self.connection_pool.orig_connections  # noqa
+            skip = (self.seed_connections |
+                    self.connection_pool.orig_connections)
 
             await old_connection_pool.close(skip=skip)
 
