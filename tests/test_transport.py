@@ -60,3 +60,15 @@ async def test_sniff_on_start(auto_close, loop, es_server):
     assert t.initial_sniff_task is not None
     await t.initial_sniff_task
     assert len(t.connection_pool.connections) == 1
+
+
+@pytest.mark.run_loop
+async def test_close_with_sniff_on_start(loop, es_server):
+    t = AIOHttpTransport([{'host': es_server['host'],
+                           'port': es_server['port']}],
+                         http_auth=es_server['auth'],
+                         sniff_on_start=True, loop=loop)
+    assert t.initial_sniff_task is not None
+    await t.close()
+    assert t.initial_sniff_task is None
+    assert t._closed

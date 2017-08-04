@@ -38,6 +38,7 @@ class AIOHttpTransport(Transport):
         **kwargs
     ):
         self.loop = loop
+        self._closed = False
 
         _serializers = DEFAULT_SERIALIZERS.copy()
         # if a serializer has been specified,
@@ -96,6 +97,8 @@ class AIOHttpTransport(Transport):
             self.initial_sniff_task.add_done_callback(_initial_sniff_reset)
 
     def set_connections(self, hosts):
+        if self._closed:
+            raise RuntimeError("Transport is closed")
 
         def _create_connection(host):
             # if this is not the initial setup look at the existing connection
@@ -174,6 +177,8 @@ class AIOHttpTransport(Transport):
         return list(node_info['nodes'].values())
 
     async def sniff_hosts(self, initial=False):
+        if self._closed:
+            raise RuntimeError("Transport is closed")
         async with self._connection_pool_lock:
             node_info = await self._get_sniff_data(initial)
             hosts = (self._get_host_info(n) for n in node_info)
@@ -194,7 +199,9 @@ class AIOHttpTransport(Transport):
 
             await old_connection_pool.close(skip=skip)
 
-    def close(self):
+    async def close(self):
+        if self._closed:
+            return
         seeds = self.seed_connections - self.connection_pool.orig_connections
 
         coros = [connection.close() for connection in seeds]
@@ -212,9 +219,12 @@ class AIOHttpTransport(Transport):
 
         coros.append(self.connection_pool.close())
 
-        return asyncio.gather(*coros, loop=self.loop)
+        await asyncio.gather(*coros, loop=self.loop)
+        self._closed = True
 
     async def get_connection(self):
+        if self._closed:
+            raise RuntimeError("Transport is closed")
         if self.initial_sniff_task is not None:
             await self.initial_sniff_task
 
@@ -226,6 +236,8 @@ class AIOHttpTransport(Transport):
             return self.connection_pool.get_connection()
 
     async def mark_dead(self, connection):
+        if self._closed:
+            raise RuntimeError("Transport is closed")
         self.connection_pool.mark_dead(connection)
 
         if self.sniff_on_connection_fail:
@@ -277,6 +289,8 @@ class AIOHttpTransport(Transport):
                 return data
 
     def perform_request(self, method, url, params=None, body=None):
+        if self._closed:
+            raise RuntimeError("Transport is closed")
         # yarl fix for https://github.com/elastic/elasticsearch-py/blob/d4efb81b0695f3d9f64784a35891b732823a9c32/elasticsearch/client/utils.py#L29  # noqa
         if params is not None:
             to_replace = {}
