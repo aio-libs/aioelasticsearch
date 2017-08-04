@@ -59,6 +59,7 @@ async def test_sniff_on_start(auto_close, loop, es_server):
                                     sniff_on_start=True, loop=loop))
     assert t.initial_sniff_task is not None
     await t.initial_sniff_task
+    assert t.initial_sniff_task is None
     assert len(t.connection_pool.connections) == 1
 
 
@@ -83,3 +84,33 @@ async def test_get_connection_with_sniff_on_start(auto_close, loop, es_server):
     conn = await t.get_connection()
     assert conn is not None
     assert t.initial_sniff_task is None
+
+
+@pytest.mark.run_loop
+async def test_get_connection_with_sniffer_timeout(auto_close,
+                                                   loop, es_server):
+    t = auto_close(AIOHttpTransport([{'host': 'unknown_host',
+                                      'port': 9200},
+                                     {'host': es_server['host'],
+                                      'port': es_server['port']}],
+                                    http_auth=es_server['auth'],
+                                    sniffer_timeout=1e-12, loop=loop))
+    conn = await t.get_connection()
+    assert conn is not None
+    assert t.initial_sniff_task is None
+    assert len(t.connection_pool.connections) == 1
+
+
+@pytest.mark.run_loop
+async def test_get_connection_without_sniffer_timeout(auto_close,
+                                                   loop, es_server):
+    t = auto_close(AIOHttpTransport([{'host': 'unknown_host',
+                                      'port': 9200},
+                                     {'host': es_server['host'],
+                                      'port': es_server['port']}],
+                                    http_auth=es_server['auth'],
+                                    sniffer_timeout=1e12, loop=loop))
+    conn = await t.get_connection()
+    assert conn is not None
+    assert t.initial_sniff_task is None
+    assert len(t.connection_pool.connections) == 2
