@@ -2,6 +2,7 @@ import pytest
 
 from aioelasticsearch import AIOHttpTransport
 from aioelasticsearch.connection import AIOHttpConnection
+from aioelasticsearch.pool import AIOHttpConnectionPool
 
 
 class DummyConnection(AIOHttpConnection):
@@ -114,3 +115,38 @@ async def test_get_connection_without_sniffer_timeout(auto_close,
     assert conn is not None
     assert t.initial_sniff_task is None
     assert len(t.connection_pool.connections) == 2
+
+
+@pytest.mark.run_loop
+async def test_mark_dead(auto_close, loop, es_server):
+    t = auto_close(AIOHttpTransport([{'host': 'unknown_host',
+                                      'port': 9200},
+                                     {'host': es_server['host'],
+                                      'port': es_server['port']}],
+                                    http_auth=es_server['auth'],
+                                    randomize_hosts=False,
+                                    loop=loop))
+    conn = t.connection_pool.connections[0]
+    assert conn is not None
+    assert conn.host == 'http://unknown_host:9200'
+    await t.mark_dead(conn)
+    assert len(t.connection_pool.connections) == 1
+
+
+@pytest.mark.run_loop
+async def test_mark_dead_with_sniff(auto_close, loop, es_server):
+    t = auto_close(AIOHttpTransport([{'host': 'unknown_host',
+                                      'port': 9200},
+                                     {'host': 'unknown_host2',
+                                      'port': 9200},
+                                     {'host': es_server['host'],
+                                      'port': es_server['port']}],
+                                    http_auth=es_server['auth'],
+                                    sniff_on_connection_fail=True,
+                                    randomize_hosts=False,
+                                    loop=loop))
+    conn = t.connection_pool.connections[0]
+    assert conn is not None
+    assert conn.host == 'http://unknown_host:9200'
+    await t.mark_dead(conn)
+    assert len(t.connection_pool.connections) == 1
