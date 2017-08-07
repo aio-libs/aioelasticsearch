@@ -1,8 +1,7 @@
 import pytest
 
-from aioelasticsearch import AIOHttpTransport
+from aioelasticsearch import Elasticsearch, AIOHttpTransport
 from aioelasticsearch.connection import AIOHttpConnection
-from aioelasticsearch.pool import AIOHttpConnectionPool
 
 
 class DummyConnection(AIOHttpConnection):
@@ -104,7 +103,7 @@ async def test_get_connection_with_sniffer_timeout(auto_close,
 
 @pytest.mark.run_loop
 async def test_get_connection_without_sniffer_timeout(auto_close,
-                                                   loop, es_server):
+                                                      loop, es_server):
     t = auto_close(AIOHttpTransport([{'host': 'unknown_host',
                                       'port': 9200},
                                      {'host': es_server['host'],
@@ -150,3 +149,119 @@ async def test_mark_dead_with_sniff(auto_close, loop, es_server):
     assert conn.host == 'http://unknown_host:9200'
     await t.mark_dead(conn)
     assert len(t.connection_pool.connections) == 1
+
+
+@pytest.mark.run_loop
+async def test_send_get_body_as_post(es_server, auto_close, loop):
+    cl = auto_close(Elasticsearch([{'host': es_server['host'],
+                                   'port': es_server['port']}],
+                                  send_get_body_as='POST',
+                                  http_auth=es_server['auth'],
+                                  loop=loop))
+    await cl.create('test', 'type', '1', {'val': '1'})
+    await cl.create('test', 'type', '2', {'val': '2'})
+    ret = await cl.mget(
+        {"docs": [
+                {"_id": "1"},
+                {"_id": "2"}
+        ]},
+        index='test', doc_type='type')
+    assert ret == {'docs': [{'_id': '1',
+                             '_index': 'test',
+                             '_source': {'val': '1'},
+                             '_type': 'type',
+                             '_version': 1,
+                             'found': True},
+                            {'_id': '2',
+                             '_index': 'test',
+                             '_source': {'val': '2'},
+                             '_type': 'type',
+                             '_version': 1,
+                             'found': True}]}
+
+
+@pytest.mark.run_loop
+async def test_send_get_body_as_source(es_server, auto_close, loop):
+    cl = auto_close(Elasticsearch([{'host': es_server['host'],
+                                   'port': es_server['port']}],
+                                  send_get_body_as='source',
+                                  http_auth=es_server['auth'],
+                                  loop=loop))
+    await cl.create('test', 'type', '1', {'val': '1'})
+    await cl.create('test', 'type', '2', {'val': '2'})
+    ret = await cl.mget(
+        {"docs": [
+                {"_id": "1"},
+                {"_id": "2"}
+        ]},
+        index='test', doc_type='type')
+    assert ret == {'docs': [{'_id': '1',
+                             '_index': 'test',
+                             '_source': {'val': '1'},
+                             '_type': 'type',
+                             '_version': 1,
+                             'found': True},
+                            {'_id': '2',
+                             '_index': 'test',
+                             '_source': {'val': '2'},
+                             '_type': 'type',
+                             '_version': 1,
+                             'found': True}]}
+
+
+@pytest.mark.run_loop
+async def test_send_get_body_as_get(es_server, auto_close, loop):
+    cl = auto_close(Elasticsearch([{'host': es_server['host'],
+                                   'port': es_server['port']}],
+                                  http_auth=es_server['auth'],
+                                  loop=loop))
+    await cl.create('test', 'type', '1', {'val': '1'})
+    await cl.create('test', 'type', '2', {'val': '2'})
+    ret = await cl.mget(
+        {"docs": [
+                {"_id": "1"},
+                {"_id": "2"}
+        ]},
+        index='test', doc_type='type')
+    assert ret == {'docs': [{'_id': '1',
+                             '_index': 'test',
+                             '_source': {'val': '1'},
+                             '_type': 'type',
+                             '_version': 1,
+                             'found': True},
+                            {'_id': '2',
+                             '_index': 'test',
+                             '_source': {'val': '2'},
+                             '_type': 'type',
+                             '_version': 1,
+                             'found': True}]}
+
+
+@pytest.mark.run_loop
+async def test_send_get_body_as_source_none_params(es_server,
+                                                   auto_close, loop):
+    cl = auto_close(Elasticsearch([{'host': es_server['host'],
+                                   'port': es_server['port']}],
+                                  send_get_body_as='source',
+                                  http_auth=es_server['auth'],
+                                  loop=loop))
+    await cl.create('test', 'type', '1', {'val': '1'})
+    await cl.create('test', 'type', '2', {'val': '2'})
+    ret = await cl.transport.perform_request(
+        'GET', 'test/type/_mget',
+        body={"docs": [
+            {"_id": "1"},
+            {"_id": "2"}
+        ]})
+    assert ret == {'docs': [{'_id': '1',
+                             '_index': 'test',
+                             '_source': {'val': '1'},
+                             '_type': 'type',
+                             '_version': 1,
+                             'found': True},
+                            {'_id': '2',
+                             '_index': 'test',
+                             '_source': {'val': '2'},
+                             '_type': 'type',
+                             '_version': 1,
+                             'found': True}]}

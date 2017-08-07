@@ -54,7 +54,7 @@ def pytest_generate_tests(metafunc):
 
 
 @pytest.fixture(scope='session')
-def es_server(docker, session_id, es_tag, request):
+def es_container(docker, session_id, es_tag, request):
     image = 'docker.elastic.co/elasticsearch/elasticsearch:{}'.format(es_tag)
     if not request.config.option.no_pull:
         docker.images.pull(image)
@@ -89,6 +89,18 @@ def es_server(docker, session_id, es_tag, request):
 
     container.kill()
     container.remove()
+
+
+@pytest.fixture
+def es_server(es_container):
+    host = es_container['host']
+    es = elasticsearch.Elasticsearch([host],
+                                     http_auth=('elastic', 'changeme'))
+
+    es.transport.perform_request('DELETE', '/_template/*')
+    es.transport.perform_request('DELETE', '/_all')
+
+    return es_container
 
 
 @pytest.fixture
