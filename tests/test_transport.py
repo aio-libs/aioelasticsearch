@@ -1,6 +1,6 @@
 import pytest
 
-from aioelasticsearch import Elasticsearch, AIOHttpTransport
+from aioelasticsearch import Elasticsearch, AIOHttpTransport, TransportError
 from aioelasticsearch.connection import AIOHttpConnection
 
 
@@ -114,6 +114,26 @@ async def test_get_connection_without_sniffer_timeout(auto_close,
     assert conn is not None
     assert t.initial_sniff_task is None
     assert len(t.connection_pool.connections) == 2
+
+
+@pytest.mark.run_loop
+async def test_sniff_hosts_error(auto_close, loop, es_server):
+    t = auto_close(AIOHttpTransport([{'host': 'unknown_host',
+                                      'port': 9200}],
+                                    loop=loop))
+    with pytest.raises(TransportError):
+        await t.sniff_hosts()
+
+
+@pytest.mark.run_loop
+async def test_sniff_hosts_no_hosts(auto_close, loop, es_server):
+    t = auto_close(AIOHttpTransport([{'host': es_server['host'],
+                                      'port': es_server['port']}],
+                                    http_auth=es_server['auth'],
+                                    loop=loop))
+    t.host_info_callback = lambda host_info, host: None
+    with pytest.raises(TransportError):
+        await t.sniff_hosts()
 
 
 @pytest.mark.run_loop
@@ -265,3 +285,45 @@ async def test_send_get_body_as_source_none_params(es_server,
                              '_type': 'type',
                              '_version': 1,
                              'found': True}]}
+
+
+@pytest.mark.run_loop
+async def test_set_connections_closed(es):
+    await es.close()
+    with pytest.raises(RuntimeError):
+        es.transport.set_connections(['host1', 'host2'])
+
+
+@pytest.mark.run_loop
+async def test_sniff_hosts_closed(es):
+    await es.close()
+    with pytest.raises(RuntimeError):
+        await es.transport.sniff_hosts()
+
+
+@pytest.mark.run_loop
+async def test_close_closed(es):
+    await es.close()
+    await es.close()
+
+
+@pytest.mark.run_loop
+async def test_get_connection_closed(es):
+    await es.close()
+    with pytest.raises(RuntimeError):
+        await es.transport.get_connection()
+
+
+@pytest.mark.run_loop
+async def test_mark_dead_closed(es):
+    await es.close()
+    conn = object()
+    with pytest.raises(RuntimeError):
+        await es.transport.mark_dead(conn)
+
+
+@pytest.mark.run_loop
+async def test_perform_request_closed(es):
+    await es.close()
+    with pytest.raises(RuntimeError):
+        await es.transport.perform_request('GET', '/')

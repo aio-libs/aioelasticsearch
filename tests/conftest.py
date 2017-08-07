@@ -108,24 +108,7 @@ def es(loop, es_server):
     es = Elasticsearch(loop=loop, hosts=[{'host': es_server['host'],
                                           'port': es_server['port']}],
                        http_auth=es_server['auth'])
-
-    def _flush_es():
-        delete_template = es.transport.perform_request(
-            'DELETE',
-            '/_template/*',
-        )
-        delete_all = es.transport.perform_request(
-            'DELETE',
-            '/_all',
-        )
-
-        return asyncio.gather(*[delete_template, delete_all], loop=loop)
-
-    loop.run_until_complete(_flush_es())
-
     yield es
-
-    loop.run_until_complete(_flush_es())
     loop.run_until_complete(es.close())
 
 
