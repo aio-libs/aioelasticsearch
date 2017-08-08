@@ -103,16 +103,13 @@ class AIOHttpConnectionPool:
 
         return self.connections[0]
 
-    def close(self, skip=None):
-        if skip is None:
-            skip = set()
-
+    async def close(self, *, skip=frozenset()):
         coros = [
             connection.close() for connection in
             self.orig_connections - skip
         ]
 
-        return asyncio.gather(*coros, loop=self.loop)
+        await asyncio.gather(*coros, loop=self.loop)
 
 
 class DummyConnectionPool(AIOHttpConnectionPool):
@@ -133,16 +130,10 @@ class DummyConnectionPool(AIOHttpConnectionPool):
     def get_connection(self):
         return self.connection
 
-    def close(self, skip=None):
-        if skip is None:
-            skip = set()
-
+    async def close(self, *, skip=frozenset()):
         if self.connection in skip:
-            fut = create_future(loop=self.loop)
-            fut.set_result(None)
-            return fut
-
-        return self.connection.close()
+            return
+        await self.connection.close()
 
     def mark_live(self, connection):
         pass
