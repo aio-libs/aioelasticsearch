@@ -67,11 +67,7 @@ class AIOHttpConnectionPool:
             )
 
     def mark_live(self, connection):
-        try:
-            del self.dead_count[connection]
-        except KeyError:
-            # possible due to race condition
-            pass
+        del self.dead_count[connection]
 
     def resurrect(self, force=False):
         if self.dead.empty():
