@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from itertools import chain
+from itertools import chain, count
 
 from elasticsearch.serializer import (DEFAULT_SERIALIZERS, Deserializer,
                                       JSONSerializer)
@@ -248,7 +248,7 @@ class AIOHttpTransport(Transport):
         method, url, params, body,
         ignore=(), timeout=None,
     ):
-        for attempt in range(self.max_retries + 1):
+        for attempt in count(0):  # pragma: no branch
             connection = await self.get_connection()
 
             try:
