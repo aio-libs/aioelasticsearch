@@ -15,8 +15,6 @@ def loop(request):
 
     loop = asyncio.new_event_loop()
 
-    loop.set_debug(True)
-
     yield loop
 
     loop.call_soon(loop.stop)
@@ -56,7 +54,7 @@ def pytest_generate_tests(metafunc):
 
 
 @pytest.fixture(scope='session')
-def es_server(docker, session_id, es_tag, request):
+def es_container(docker, session_id, es_tag, request):
     image = 'docker.elastic.co/elasticsearch/elasticsearch:{}'.format(es_tag)
     if not request.config.option.no_pull:
         docker.images.pull(image)
@@ -94,29 +92,37 @@ def es_server(docker, session_id, es_tag, request):
 
 
 @pytest.fixture
+def es_server(es_container):
+    host = es_container['host']
+    es = elasticsearch.Elasticsearch([host],
+                                     http_auth=('elastic', 'changeme'))
+
+    es.transport.perform_request('DELETE', '/_template/*')
+    es.transport.perform_request('DELETE', '/_all')
+
+    return es_container
+
+
+@pytest.fixture
 def es(loop, es_server):
     es = Elasticsearch(loop=loop, hosts=[{'host': es_server['host'],
                                           'port': es_server['port']}],
                        http_auth=es_server['auth'])
-
-    def _flush_es():
-        delete_template = es.transport.perform_request(
-            'DELETE',
-            '/_template/*',
-        )
-        delete_all = es.transport.perform_request(
-            'DELETE',
-            '/_all',
-        )
-
-        return asyncio.gather(*[delete_template, delete_all], loop=loop)
-
-    loop.run_until_complete(_flush_es())
-
     yield es
-
-    loop.run_until_complete(_flush_es())
     loop.run_until_complete(es.close())
+
+
+@pytest.fixture
+def auto_close(loop):
+    close_list = []
+
+    def f(arg):
+        close_list.append(arg)
+        return arg
+
+    yield f
+    for arg in close_list:
+        loop.run_until_complete(arg.close())
 
 
 @pytest.mark.tryfirst
