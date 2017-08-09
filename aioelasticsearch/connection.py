@@ -65,8 +65,8 @@ class AIOHttpConnection(Connection):
                 ),
             )
 
-    def close(self):
-        return self.session.close()
+    async def close(self):
+        await self.session.close()
 
     async def perform_request(
         self,

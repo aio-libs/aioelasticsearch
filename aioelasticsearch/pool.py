@@ -5,7 +5,6 @@ import random
 
 from elasticsearch.connection_pool import RoundRobinSelector
 
-from .compat import create_future
 from .exceptions import ImproperlyConfigured
 
 logger = logging.getLogger('elasticsearch')
@@ -57,7 +56,7 @@ class AIOHttpConnectionPool:
 
             timeout = self.dead_timeout(dead_count)
 
-            # it is impossible to raise QueueEmpty here
+            # it is impossible to raise QueueFull here
             self.dead.put_nowait((now + timeout, connection))
 
             logger.warning(
@@ -67,23 +66,20 @@ class AIOHttpConnectionPool:
             )
 
     def mark_live(self, connection):
-        try:
-            del self.dead_count[connection]
-        except KeyError:
-            # possible due to race condition
-            pass
+        del self.dead_count[connection]
 
     def resurrect(self, force=False):
         if self.dead.empty():
             if force:
-                return random.choice(self.orig_connections)
+                # list here is ok, it's a very rare case
+                return random.choice(list(self.orig_connections))
             return
 
-        timeout, connection = self.dead.get_nowait()
+        timestamp, connection = self.dead.get_nowait()
 
-        if not force and timeout > self.loop.time():
+        if not force and timestamp > self.loop.time():
             # return it back if not eligible and not forced
-            self.dead.put_nowait((timeout, connection))
+            self.dead.put_nowait((timestamp, connection))
             return
 
         # either we were forced or the connection is elligible to be retried
@@ -100,23 +96,22 @@ class AIOHttpConnectionPool:
         self.resurrect()
 
         if not self.connections:
-            return self.resurrect(force=True)
+            conn = self.resurrect(force=True)
+            assert conn is not None
+            return conn
 
         if len(self.connections) > 1:
             return self.selector.select(self.connections)
 
         return self.connections[0]
 
-    def close(self, skip=None):
-        if skip is None:
-            skip = set()
-
+    async def close(self, *, skip=frozenset()):
         coros = [
             connection.close() for connection in
             self.orig_connections - skip
         ]
 
-        return asyncio.gather(*coros, loop=self.loop)
+        await asyncio.gather(*coros, loop=self.loop)
 
 
 class DummyConnectionPool(AIOHttpConnectionPool):
@@ -131,22 +126,16 @@ class DummyConnectionPool(AIOHttpConnectionPool):
 
         self.connection_opts = connections
         self.connection = connections[0][0]
-        self.connections = (self.connection, )
+        self.connections = [self.connection]
         self.orig_connections = set(self.connections)
 
     def get_connection(self):
         return self.connection
 
-    def close(self, skip=None):
-        if skip is None:
-            skip = set()
-
+    async def close(self, *, skip=frozenset()):
         if self.connection in skip:
-            fut = create_future(loop=self.loop)
-            fut.set_result(None)
-            return fut
-
-        return self.connection.close()
+            return
+        await self.connection.close()
 
     def mark_live(self, connection):
         pass
