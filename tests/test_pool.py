@@ -1,7 +1,7 @@
 import pytest
 
 
-from aioelasticsearch import Elasticsearch
+from aioelasticsearch import Elasticsearch, AIOHttpConnectionPool
 
 
 @pytest.mark.run_loop
@@ -50,3 +50,24 @@ async def test_mark_live_not_dead(auto_close, es_server, loop):
     pool = es.transport.connection_pool
     pool.mark_live(conn)
     assert conn not in pool.dead_count
+
+
+@pytest.mark.run_loop
+async def test_resurrect_empty(loop):
+    conn1 = object()
+    conn2 = object()
+    conns = [(conn1, object()), (conn2, object())]
+    pool = AIOHttpConnectionPool(connections=conns,
+                                 randomize_hosts=False, loop=loop)
+    pool.resurrect()
+    assert pool.connections == [conn1, conn2]
+
+
+@pytest.mark.run_loop
+async def test_resurrect_empty_force(loop):
+    conn1 = object()
+    conn2 = object()
+    conns = [(conn1, object()), (conn2, object())]
+    pool = AIOHttpConnectionPool(connections=conns,
+                                 randomize_hosts=False, loop=loop)
+    assert pool.resurrect(force=True) in (conn1, conn2)

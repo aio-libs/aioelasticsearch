@@ -56,7 +56,7 @@ class AIOHttpConnectionPool:
 
             timeout = self.dead_timeout(dead_count)
 
-            # it is impossible to raise QueueEmpty here
+            # it is impossible to raise QueueFull here
             self.dead.put_nowait((now + timeout, connection))
 
             logger.warning(
@@ -71,7 +71,8 @@ class AIOHttpConnectionPool:
     def resurrect(self, force=False):
         if self.dead.empty():
             if force:
-                return random.choice(self.orig_connections)
+                # list here is ok, it's a very rare case
+                return random.choice(list(self.orig_connections))
             return
 
         timeout, connection = self.dead.get_nowait()
@@ -95,7 +96,9 @@ class AIOHttpConnectionPool:
         self.resurrect()
 
         if not self.connections:
-            return self.resurrect(force=True)
+            conn = self.resurrect(force=True)
+            assert conn is not None
+            return conn
 
         if len(self.connections) > 1:
             return self.selector.select(self.connections)
