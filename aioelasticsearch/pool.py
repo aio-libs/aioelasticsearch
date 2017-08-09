@@ -126,7 +126,7 @@ class DummyConnectionPool(AIOHttpConnectionPool):
 
         self.connection_opts = connections
         self.connection = connections[0][0]
-        self.connections = (self.connection, )
+        self.connections = [self.connection]
         self.orig_connections = set(self.connections)
 
     def get_connection(self):
