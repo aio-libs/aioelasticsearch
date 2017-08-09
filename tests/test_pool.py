@@ -71,3 +71,28 @@ async def test_resurrect_empty_force(loop):
     pool = AIOHttpConnectionPool(connections=conns,
                                  randomize_hosts=False, loop=loop)
     assert pool.resurrect(force=True) in (conn1, conn2)
+
+
+@pytest.mark.run_loop
+async def test_resurrect_from_dead_not_ready_connection(loop):
+    conn1 = object()
+    conn2 = object()
+    conns = [(conn1, object()), (conn2, object())]
+    pool = AIOHttpConnectionPool(connections=conns,
+                                 randomize_hosts=False, loop=loop)
+    pool.mark_dead(conn1)
+    pool.resurrect()
+    assert pool.connections == [conn2]
+
+
+@pytest.mark.run_loop
+async def test_resurrect_from_dead_ready_connection(loop):
+    conn1 = object()
+    conn2 = object()
+    conns = [(conn1, object()), (conn2, object())]
+    pool = AIOHttpConnectionPool(connections=conns,
+                                 randomize_hosts=False, loop=loop)
+    pool.dead_timeout = lambda t: 0
+    pool.mark_dead(conn1)
+    pool.resurrect()
+    assert pool.connections == [conn2, conn1]

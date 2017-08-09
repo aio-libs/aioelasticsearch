@@ -75,11 +75,11 @@ class AIOHttpConnectionPool:
                 return random.choice(list(self.orig_connections))
             return
 
-        timeout, connection = self.dead.get_nowait()
+        timestamp, connection = self.dead.get_nowait()
 
-        if not force and timeout > self.loop.time():
+        if not force and timestamp > self.loop.time():
             # return it back if not eligible and not forced
-            self.dead.put_nowait((timeout, connection))
+            self.dead.put_nowait((timestamp, connection))
             return
 
         # either we were forced or the connection is elligible to be retried
