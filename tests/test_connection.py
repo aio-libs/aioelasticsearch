@@ -50,3 +50,10 @@ async def test_auth_basicauth(auto_close, loop):
 async def test_auth_invalid(loop):
     with pytest.raises(TypeError):
         AIOHttpConnection(http_auth=object(), loop=loop)
+
+
+@pytest.mark.run_loop
+async def test_explicit_session(auto_close, loop):
+    session = aiohttp.ClientSession()
+    conn = auto_close(AIOHttpConnection(session=session, loop=loop))
+    assert conn.session is session
