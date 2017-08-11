@@ -61,7 +61,7 @@ def es_container(docker, session_id, es_tag, request):
     container = docker.containers.run(
         image, detach=True,
         name='aioelasticsearch-'+session_id,
-        ports={'9200/tcp': None},
+        ports={'9200/tcp': None, '9300/tcp': None},
         environment={'http.host': '0.0.0.0',
                      'transport.host': '127.0.0.1'})
 

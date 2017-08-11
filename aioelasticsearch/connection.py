@@ -8,6 +8,7 @@ from aiohttp import ClientError
 
 from .exceptions import ConnectionError, ConnectionTimeout, SSLError  # noqa # isort:skip
 
+from aiohttp import BasicAuth
 from elasticsearch.connection import Connection  # noqa # isort:skip
 from yarl import URL  # noqa # isort:skip
 
@@ -38,19 +39,25 @@ class AIOHttpConnection(Connection):
         self.loop = loop
 
         if http_auth is not None:
-            if isinstance(http_auth, str):
-                http_auth = tuple(http_auth.split(':', 1))
-
-            if isinstance(http_auth, (tuple, list)):
+            if isinstance(http_auth, BasicAuth):
+                pass
+            elif isinstance(http_auth, str):
+                http_auth = BasicAuth(*http_auth.split(':', 1))
+            elif isinstance(http_auth, (tuple, list)):
                 http_auth = aiohttp.BasicAuth(*http_auth)
+            else:
+                raise TypeError("Expected str, list, tuple or "
+                                "aiohttp.BasicAuth as http_auth parameter,"
+                                "got {!r}".format(http_auth))
 
         self.http_auth = http_auth
 
         self.verify_certs = verify_certs
 
-        self.base_url = URL('http%s://%s:%d%s/' % (
-            's' if self.use_ssl else '', host, port, self.url_prefix,
-        ))
+        self.base_url = URL.build(scheme='https' if self.use_ssl else 'http',
+                                  host=host,
+                                  port=port,
+                                  path=self.url_prefix)
 
         self.session = kwargs.get('session')
         if self.session is None:
@@ -135,10 +142,6 @@ class AIOHttpConnection(Connection):
                 raise SSLError('N/A', _exc, exc)
 
             raise ConnectionError('N/A', _exc, exc)
-
-        finally:
-            if response is not None:
-                await response.release()
 
         # raise errors based on http status codes
         # let the client handle those if needed
