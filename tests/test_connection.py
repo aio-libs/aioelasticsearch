@@ -1,8 +1,13 @@
+import asyncio
+import ssl
+
+
 import aiohttp
 import pytest
 
 
-from aioelasticsearch.connection import AIOHttpConnection
+from aioelasticsearch.connection import (AIOHttpConnection,
+                                         ConnectionError, SSLError)
 
 
 @pytest.mark.run_loop
@@ -54,6 +59,51 @@ async def test_auth_invalid(loop):
 
 @pytest.mark.run_loop
 async def test_explicit_session(auto_close, loop):
-    session = aiohttp.ClientSession()
+    session = aiohttp.ClientSession(loop=loop)
     conn = auto_close(AIOHttpConnection(session=session, loop=loop))
     assert conn.session is session
+
+
+@pytest.mark.run_loop
+async def test_perform_request_bad_cert(auto_close, loop):
+    session = aiohttp.ClientSession(loop=loop)
+
+    @asyncio.coroutine
+    def request(*args, **kwargs):
+        raise ssl.CertificateError()
+    session._request = request
+
+    conn = auto_close(AIOHttpConnection(session=session, loop=loop,
+                                        use_ssl=True))
+    with pytest.raises(SSLError):
+        await conn.perform_request('HEAD', '/')
+
+
+@pytest.mark.run_loop
+async def test_perform_request_bad_cert2(auto_close, loop):
+    session = aiohttp.ClientSession(loop=loop)
+
+    @asyncio.coroutine
+    def request(*args, **kwargs):
+        raise aiohttp.ClientError('SSL: CERTIFICATE_VERIFY_FAILED')
+    session._request = request
+
+    conn = auto_close(AIOHttpConnection(session=session, loop=loop,
+                                        use_ssl=True))
+    with pytest.raises(SSLError):
+        await conn.perform_request('HEAD', '/')
+
+
+@pytest.mark.run_loop
+async def test_perform_connection_error(auto_close, loop):
+    session = aiohttp.ClientSession(loop=loop)
+
+    @asyncio.coroutine
+    def request(*args, **kwargs):
+        raise aiohttp.ClientError('Other')
+    session._request = request
+
+    conn = auto_close(AIOHttpConnection(session=session, loop=loop,
+                                        use_ssl=True))
+    with pytest.raises(ConnectionError):
+        await conn.perform_request('HEAD', '/')

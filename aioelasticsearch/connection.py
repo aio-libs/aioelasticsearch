@@ -143,10 +143,6 @@ class AIOHttpConnection(Connection):
 
             raise ConnectionError('N/A', _exc, exc)
 
-        finally:
-            if response is not None:
-                await response.release()
-
         # raise errors based on http status codes
         # let the client handle those if needed
         if (
