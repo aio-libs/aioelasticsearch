@@ -248,7 +248,7 @@ class AIOHttpTransport(Transport):
         method, url, params, body,
         ignore=(), timeout=None,
     ):
-        for attempt in count(0):  # pragma: no branch
+        for attempt in count(1):  # pragma: no branch
             connection = await self.get_connection()
 
             try:
@@ -288,7 +288,7 @@ class AIOHttpTransport(Transport):
 
                 return data
 
-    def perform_request(self, method, url, params=None, body=None):
+    async def perform_request(self, method, url, params=None, body=None):
         if self._closed:
             raise RuntimeError("Transport is closed")
         # yarl fix for https://github.com/elastic/elasticsearch-py/blob/d4efb81b0695f3d9f64784a35891b732823a9c32/elasticsearch/client/utils.py#L29  # noqa
@@ -331,7 +331,7 @@ class AIOHttpTransport(Transport):
             if isinstance(ignore, int):
                 ignore = (ignore, )
 
-        return self._perform_request(
+        return await self._perform_request(
             method, url, params, body,
             ignore=ignore, timeout=timeout,
         )
