@@ -1,6 +1,8 @@
+from unittest import mock
+
+
 import pytest
 
-from aioelasticsearch import NotFoundError
 from aioelasticsearch.helpers import Scan
 
 
@@ -18,11 +20,36 @@ async def test_scan_initial_raises(es):
     with pytest.raises(AssertionError):
         scan.total
 
-    with pytest.raises(AssertionError):
-        scan.has_more
 
-    with pytest.raises(AssertionError):
-        await scan.search()
+@pytest.mark.run_loop
+async def test_scan_simple(es, populate):
+    index = 'test_aioes'
+    doc_type = 'type_2'
+    scroll_size = 3
+    n = 10
+
+    body = {'foo': 1}
+    await populate(es, index, doc_type, n, body)
+    ids = set()
+
+    async with Scan(
+        es,
+        index=index,
+        doc_type=doc_type,
+        size=scroll_size,
+    ) as scan:
+        assert scan.scroll_id is not None
+        assert scan.total == 10
+        async for doc in scan:
+            ids.add(doc['_id'])
+            assert doc == {'_id': mock.ANY,
+                           '_index': 'test_aioes',
+                           '_score': None,
+                           '_source': {'foo': 1},
+                           '_type': 'type_2',
+                           'sort': mock.ANY}
+
+    assert ids == set(str(i) for i in range(10))
 
 
 @pytest.mark.parametrize('n,scroll_size', [
@@ -43,7 +70,7 @@ async def test_scan_equal_chunks_for_loop(es, n, scroll_size, populate):
     await populate(es, index, doc_type, n, body)
 
     ids = set()
-    data = []
+    # data = []
 
     async with Scan(
         es,
@@ -52,10 +79,7 @@ async def test_scan_equal_chunks_for_loop(es, n, scroll_size, populate):
         size=scroll_size,
     ) as scan:
 
-        async for scroll in scan:
-            data.append(scroll)
-
-            for doc in scroll:
+        async for doc in scan:
                 ids.add(doc['_id'])
 
         # check number of unique doc ids
@@ -66,32 +90,8 @@ async def test_scan_equal_chunks_for_loop(es, n, scroll_size, populate):
     if n % scroll_size != 0:
         expected_scroll_sizes.append(n % scroll_size)
 
-    scroll_sizes = [len(scroll) for scroll in data]
-    assert scroll_sizes == expected_scroll_sizes
-
-
-@pytest.mark.run_loop
-async def test_scan_has_more(es, populate):
-    index = 'test_aioes'
-    doc_type = 'type_1'
-    n = 10
-    scroll_size = 3
-    body = {'foo': 1}
-
-    await populate(es, index, doc_type, n, body)
-
-    async with Scan(
-        es,
-        index=index,
-        doc_type=doc_type,
-        size=scroll_size,
-    ) as scan:
-        assert scan.has_more
-
-        async for scroll in scan:
-            scroll
-
-        assert not scan.has_more
+    # scroll_sizes = [len(scroll) for scroll in data]
+    # assert scroll_sizes == expected_scroll_sizes
 
 
 @pytest.mark.run_loop
@@ -106,9 +106,12 @@ async def test_scan_no_mask_index(es):
         doc_type=doc_type,
         size=scroll_size,
     ) as scan:
-        assert scan.scroll_id is None
-        assert not scan.has_more
+        assert scan.scroll_id is not None
         assert scan.total == 0
+        cnt = 0
+        async for doc in scan:  # noqa
+            cnt += 1
+        assert cnt == 0
 
 
 @pytest.mark.run_loop
@@ -117,12 +120,15 @@ async def test_scan_no_index(es):
     doc_type = 'any'
     scroll_size = 3
 
-    with pytest.raises(NotFoundError):
-        async with Scan(
-            es,
-            index=index,
-            doc_type=doc_type,
-            size=scroll_size,
-        ) as scan:
-            async for scroll in scan:
-                scroll
+    async with Scan(
+        es,
+        index=index,
+        doc_type=doc_type,
+        size=scroll_size,
+    ) as scan:
+        assert scan.scroll_id is not None
+        assert scan.total == 0
+        cnt = 0
+        async for doc in scan:  # noqa
+            cnt += 1
+        assert cnt == 0

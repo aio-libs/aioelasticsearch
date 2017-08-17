@@ -1,5 +1,8 @@
 import asyncio
 
+from aioelasticsearch import NotFoundError
+from elasticsearch.helpers import ScanError
+
 from .compat import PY_352
 
 
@@ -10,8 +13,9 @@ class Scan:
         es,
         query=None,
         scroll='5m',
-        size=1000,
+        raise_on_error=True,
         preserve_order=False,
+        size=1000,
         clear_scroll=True,
         **kwargs
     ):
@@ -22,6 +26,7 @@ class Scan:
             query['sort'] = '_doc'
         self._query = query
         self._scroll = scroll
+        self._raise_on_error = raise_on_error
         self._size = size
         self._clear_scroll = clear_scroll
         self._kwargs = kwargs
@@ -30,19 +35,17 @@ class Scan:
 
         self._total = 0
 
-        self.__initial = True
-        self.__has_more = None
-        self.__found = 0
-        self.__scroll_hits = None
-        self.__scroll_hits_found = False
+        self._initial = True
+        self._done = False
+        self._hits = []
+        self._hits_idx = 0
 
     async def __aenter__(self):  # noqa
-        await self.scroll()
-
+        await self._do_search()
         return self
 
     async def __aexit__(self, *exc_info):  # noqa
-        await self.clear_scroll()
+        await self._do_clear_scroll()
 
     def __aiter__(self):
         return self
@@ -51,92 +54,73 @@ class Scan:
         __aiter__ = asyncio.coroutine(__aiter__)
 
     async def __anext__(self):  # noqa
-        assert not self.__initial
+        assert not self._initial
 
-        if self.__scroll_hits is not None:
-            hits = self.__scroll_hits
-
-            self.__scroll_hits = None
-        else:
-            hits = await self.search()
-
-        if not hits:
+        if self._done:
             raise StopAsyncIteration
 
-        return hits
+        if self._hits_idx >= len(self._hits):
+            await self._do_scroll()
+        ret = self._hits[self._hits_idx]
+        self._hits_idx += 1
+        return ret
 
     @property
     def scroll_id(self):
-        assert not self.__initial
-
-        return self._scroll_id
-
-    @property
-    def total(self):
-        assert not self.__initial
-
+        assert not self._initial
         return self._total
 
     @property
-    def has_more(self):
-        assert not self.__initial
+    def total(self):
+        assert not self._initial
+        return self._total
 
-        if self._scroll_id is None:
-            return False
+    async def _do_search(self):
+        assert self._initial
+        self._initial = False
 
-        if self.__has_more is False:
-            return False
+        try:
+            resp = await self._es.search(
+                body=self._query,
+                scroll=self._scroll,
+                size=self._size,
+                **self._kwargs
+            )
+        except NotFoundError:
+            self._done = True
+            return
+        else:
+            self._hits = resp['hits']['hits']
+            self._hits_idx = 0
+            self._scroll_id = resp.get('_scroll_id')
+            self._total = resp['hits']['total']
+            self._done = not self._hits or self._scroll_id is None
 
-        return True
+    async def _do_scroll(self):
+        assert not self._initial
 
-    async def scroll(self):
-        assert self.__initial
+        try:
+            resp = await self._es.scroll(
+                self._scroll_id,
+                scroll=self._scroll,
+            )
+        except NotFoundError:  # pragma: no cover
+            # Don't know how to make test case for it
+            # but if search could return 404 on not exsiting index
+            # scroll maybe can do it too
+            self._done = True
+            raise StopAsyncIteration
+        else:
+            self._hits = resp['hits']['hits']
+            self._hits_idx = 0
+            self._scroll_id = resp.get('_scroll_id')
+            self._done = not self._hits or self._scroll_id is None
+            if self._done:
+                raise StopAsyncIteration
 
-        resp = await self._es.search(
-            body=self._query,
-            scroll=self._scroll,
-            size=self._size,
-            **self._kwargs
-        )
-
-        self.__initial = False
-
-        hits = resp['hits']['hits']
-
-        self._scroll_id = resp.get('_scroll_id')
-
-        self._total = resp['hits']['total']
-
-        self.__found += len(hits)
-
-        self.__has_more = self.__found < self._total
-
-        self.__scroll_hits = hits
-
-        self.__scroll_hits_found = bool(self.__scroll_hits)
-
-        return hits
-
-    async def search(self):
-        assert not self.__initial
-
-        resp = await self._es.scroll(
-            self._scroll_id,
-            scroll=self._scroll,
-        )
-
-        hits = resp['hits']['hits']
-
-        self._scroll_id = resp.get('_scroll_id')
-
-        self.__found += len(hits)
-
-        self.__has_more = self.__found < self._total
-
-        return hits
-
-    async def clear_scroll(self):
+    async def _do_clear_scroll(self):
         if self._scroll_id is not None and self._clear_scroll:
             await self._es.clear_scroll(
                 body={'scroll_id': [self._scroll_id]},
+                ignore=404,
             )
