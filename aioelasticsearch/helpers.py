@@ -1,9 +1,15 @@
-import asyncio
+import logging
 
 from aioelasticsearch import NotFoundError
 from elasticsearch.helpers import ScanError
 
 from .compat import PY_352
+
+
+__all__ = ('Scan', 'ScanError')
+
+
+logger = logging.getLogger('elasticsearch')
 
 
 class Scan:
@@ -39,6 +45,8 @@ class Scan:
         self._done = False
         self._hits = []
         self._hits_idx = 0
+        self._failed_shards = 0
+        self._total_shards = 0
 
     async def __aenter__(self):  # noqa
         await self._do_search()
@@ -61,6 +69,18 @@ class Scan:
             raise StopAsyncIteration
 
         if self._hits_idx >= len(self._hits):
+            if self._failed_shards:
+                logger.warning(
+                    'Scroll request has failed on %d shards out of %d.',
+                    self._failed_shards, self._total_shards
+                )
+                if self._raise_on_error:
+                    raise ScanError(
+                        self._scroll_id,
+                        'Scroll request has failed on {} shards out of {}.'
+                        .format(self._failed_shards, self._total_shards)
+                    )
+
             await self._do_scroll()
         ret = self._hits[self._hits_idx]
         self._hits_idx += 1
@@ -98,6 +118,8 @@ class Scan:
             self._hits_idx = 0
             self._scroll_id = resp.get('_scroll_id')
             self._total = resp['hits']['total']
+            self._failed_shards = resp['_shards']['failed']
+            self._total_shards = resp['_shards']['total']
             self._done = not self._hits or self._scroll_id is None
 
     async def _do_scroll(self):
@@ -116,6 +138,8 @@ class Scan:
             self._hits = resp['hits']['hits']
             self._hits_idx = 0
             self._scroll_id = resp.get('_scroll_id')
+            self._failed_shards = resp['_shards']['failed']
+            self._total_shards = resp['_shards']['total']
             self._done = not self._hits or self._scroll_id is None
             if self._done:
                 raise StopAsyncIteration
