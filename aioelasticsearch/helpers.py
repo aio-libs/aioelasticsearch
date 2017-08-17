@@ -1,3 +1,5 @@
+import asyncio
+
 import logging
 
 from aioelasticsearch import NotFoundError
