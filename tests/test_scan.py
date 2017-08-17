@@ -10,14 +10,14 @@ from aioelasticsearch.helpers import Scan
 async def test_scan_initial_raises(es):
     scan = Scan(es)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError):
         async for scroll in scan:  # noqa
             pass
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError):
         scan.scroll_id
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError):
         scan.total
 
 
@@ -132,3 +132,20 @@ async def test_scan_no_index(es):
         async for doc in scan:  # noqa
             cnt += 1
         assert cnt == 0
+
+
+@pytest.mark.run_loop
+async def test_scan_iter_without_context_manager(es):
+    index = 'undefined'
+    doc_type = 'any'
+    scroll_size = 3
+
+    scan = Scan(
+        es,
+        index=index,
+        doc_type=doc_type,
+        size=scroll_size,
+    )
+    with pytest.raises(RuntimeError):
+        async for doc in scan:
+            doc

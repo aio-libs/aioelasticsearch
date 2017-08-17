@@ -48,14 +48,15 @@ class Scan:
         await self._do_clear_scroll()
 
     def __aiter__(self):
+        if self._initial:
+            raise RuntimeError("Scan operations should be done "
+                               "inside async context manager")
         return self
 
     if not PY_352:
         __aiter__ = asyncio.coroutine(__aiter__)
 
     async def __anext__(self):  # noqa
-        assert not self._initial
-
         if self._done:
             raise StopAsyncIteration
 
@@ -67,16 +68,19 @@ class Scan:
 
     @property
     def scroll_id(self):
-        assert not self._initial
+        if self._initial:
+            raise RuntimeError("Scan operations should be done "
+                               "inside async context manager")
         return self._total
 
     @property
     def total(self):
-        assert not self._initial
+        if self._initial:
+            raise RuntimeError("Scan operations should be done "
+                               "inside async context manager")
         return self._total
 
     async def _do_search(self):
-        assert self._initial
         self._initial = False
 
         try:
@@ -97,8 +101,6 @@ class Scan:
             self._done = not self._hits or self._scroll_id is None
 
     async def _do_scroll(self):
-        assert not self._initial
-
         try:
             resp = await self._es.scroll(
                 self._scroll_id,
