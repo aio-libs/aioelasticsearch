@@ -94,7 +94,9 @@ async def test_get_connection_with_sniffer_timeout(auto_close,
                                      {'host': es_server['host'],
                                       'port': es_server['port']}],
                                     http_auth=es_server['auth'],
-                                    sniffer_timeout=1e-12, loop=loop))
+                                    sniffer_timeout=10, loop=loop))
+    assert t.initial_sniff_task is None
+    t.last_sniff -= 15
     conn = await t.get_connection()
     assert conn is not None
     assert t.initial_sniff_task is None
