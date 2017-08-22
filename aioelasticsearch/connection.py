@@ -89,7 +89,6 @@ class AIOHttpConnection(Connection):
         url = (self.base_url / url.lstrip('/')).with_query(params)
 
         start = self.loop.time()
-        response = None
         try:
             with async_timeout.timeout(timeout or self.timeout,
                                        loop=self.loop):

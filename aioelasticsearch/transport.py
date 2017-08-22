@@ -252,6 +252,7 @@ class AIOHttpTransport(Transport):
             connection = await self.get_connection()
 
             try:
+
                 status, headers, data = await connection.perform_request(
                     method, url, params, body,
                     ignore=ignore, timeout=timeout,

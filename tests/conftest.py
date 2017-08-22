@@ -72,7 +72,7 @@ def es_container(docker, session_id, es_tag, request):
         es = elasticsearch.Elasticsearch([host],
                                          http_auth=('elastic', 'changeme'))
         try:
-            es.exists(index='index', doc_type='doc-type', id=1)
+            es.transport.perform_request('GET', '/_nodes/_all/http')
             break
         except elasticsearch.TransportError as ex:
             time.sleep(delay)
