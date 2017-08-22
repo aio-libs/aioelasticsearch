@@ -1,6 +1,8 @@
 import pytest
 
-from aioelasticsearch import Elasticsearch, AIOHttpTransport, TransportError
+from aioelasticsearch import (Elasticsearch, ConnectionError,
+                              ConnectionTimeout, AIOHttpTransport,
+                              TransportError)
 from aioelasticsearch.connection import AIOHttpConnection
 
 
@@ -329,3 +331,80 @@ async def test_perform_request_closed(es):
     await es.close()
     with pytest.raises(RuntimeError):
         await es.transport.perform_request('GET', '/')
+
+
+@pytest.mark.run_loop
+async def test_request_error_404_on_head(loop, auto_close):
+    exc = TransportError(404)
+    t = AIOHttpTransport([{}], connection_class=DummyConnection, loop=loop,
+                         exception=exc)
+    auto_close(t)
+
+    ret = await t.perform_request('HEAD', '/')
+    assert not ret
+
+
+@pytest.mark.run_loop
+async def test_request_connection_error(loop, auto_close):
+    exc = ConnectionError()
+    t = AIOHttpTransport([{}], connection_class=DummyConnection, loop=loop,
+                         exception=exc)
+    auto_close(t)
+
+    with pytest.raises(ConnectionError):
+        await t.perform_request('GET', '/')
+
+    conn = await t.get_connection()
+    assert len(conn.calls) == 3
+
+
+@pytest.mark.run_loop
+async def test_request_connection_timeout(loop, auto_close):
+    exc = ConnectionTimeout()
+    t = AIOHttpTransport([{}], connection_class=DummyConnection, loop=loop,
+                         exception=exc)
+    auto_close(t)
+
+    with pytest.raises(ConnectionTimeout):
+        await t.perform_request('GET', '/')
+
+    conn = await t.get_connection()
+    assert len(conn.calls) == 1
+
+
+@pytest.mark.run_loop
+async def test_request_connection_timeout_with_retry(loop, auto_close):
+    exc = ConnectionTimeout()
+    t = AIOHttpTransport([{}], connection_class=DummyConnection, loop=loop,
+                         exception=exc, retry_on_timeout=True)
+    auto_close(t)
+
+    with pytest.raises(ConnectionTimeout):
+        await t.perform_request('GET', '/')
+
+    conn = await t.get_connection()
+    assert len(conn.calls) == 3
+
+
+@pytest.mark.run_loop
+async def test_request_retry_on_status(loop, auto_close):
+    exc = TransportError(500)
+    t = AIOHttpTransport([{}], connection_class=DummyConnection, loop=loop,
+                         exception=exc, retry_on_status=(500,))
+    auto_close(t)
+
+    with pytest.raises(TransportError):
+        await t.perform_request('GET', '/')
+
+    conn = await t.get_connection()
+    assert len(conn.calls) == 3
+
+
+@pytest.mark.run_loop
+async def test_request_without_data(loop, auto_close):
+    t = AIOHttpTransport([{}], connection_class=DummyConnection, loop=loop,
+                         data='')
+    auto_close(t)
+
+    ret = await t.perform_request('GET', '/')
+    assert ret == ''

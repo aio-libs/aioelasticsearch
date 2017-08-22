@@ -1,7 +1,7 @@
 aioelasticsearch
 ================
 
-:info: aioelasticsearch-py wrapper for asyncio
+:info: elasticsearch-py wrapper for asyncio
 
 .. image:: https://img.shields.io/travis/wikibusiness/aioelasticsearch.svg
     :target: https://travis-ci.org/wikibusiness/aioelasticsearch
