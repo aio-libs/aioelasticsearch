@@ -74,7 +74,6 @@ async def test_scan_equal_chunks_for_loop(es, n, scroll_size, populate):
     await populate(es, index, doc_type, n, body)
 
     ids = set()
-    # data = []
 
     async with Scan(
         es,
@@ -88,14 +87,6 @@ async def test_scan_equal_chunks_for_loop(es, n, scroll_size, populate):
 
         # check number of unique doc ids
         assert len(ids) == n == scan.total
-
-    # check number of docs in a scroll
-    expected_scroll_sizes = [scroll_size] * (n // scroll_size)
-    if n % scroll_size != 0:
-        expected_scroll_sizes.append(n % scroll_size)
-
-    # scroll_sizes = [len(scroll) for scroll in data]
-    # assert scroll_sizes == expected_scroll_sizes
 
 
 @pytest.mark.run_loop
