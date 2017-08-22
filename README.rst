@@ -61,9 +61,8 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
             ) as scan:
                 print(scan.total)
 
-                async for scroll in scan:
-                    for doc in scroll:
-                        print(doc['_source'])
+                async for doc in scan:
+                    print(doc['_source'])
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(go())
