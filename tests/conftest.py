@@ -78,8 +78,8 @@ def es_container(docker, session_id, es_tag, unused_port, request):
     if not request.config.option.no_pull:
         docker.images.pull(image)
 
-    es_port_9200 = str(unused_port())
-    es_port_9300 = str(unused_port())
+    es_port_9200 = unused_port()
+    es_port_9300 = unused_port()
 
     auth = ('elastic', 'changeme')
 
@@ -91,8 +91,8 @@ def es_container(docker, session_id, es_tag, unused_port, request):
             detach=True,
             name='aioelasticsearch-' + session_id,
             ports={
-                '9200/tcp': es_port_9200 + '/tcp',
-                '9300/tcp': es_port_9300 + '/tcp',
+                '9200/tcp': es_port_9200,
+                '9300/tcp': es_port_9300,
             },
             environment={
                 'http.host': '0.0.0.0',
@@ -100,17 +100,13 @@ def es_container(docker, session_id, es_tag, unused_port, request):
             },
         )
 
-        if request.config.option.local_docker:
-            docker_ip_address = '0.0.0.0'
-        else:
-            inspection = docker.api.inspect_container(container.id)
-            docker_ip_address = inspection['NetworkSettings']['IPAddress']
+        docker_host = '0.0.0.0'
 
         delay = 0.1
         for i in range(10):
             es = elasticsearch.Elasticsearch(
                 [{
-                    'host': docker_ip_address,
+                    'host': docker_host,
                     'port': es_port_9200,
                 }],
                 http_auth=auth,
@@ -129,7 +125,7 @@ def es_container(docker, session_id, es_tag, unused_port, request):
 
         ret = {
             'container': container,
-            'host': docker_ip_address,
+            'host': docker_host,
             'port': es_port_9200,
             'auth': auth,
         }
