@@ -12,12 +12,10 @@ async def test_ping(es):
     assert ping
 
 
-def test_elastic_default_loop(loop, auto_close, es_server):
+def test_elastic_default_loop(auto_close, loop):
     asyncio.set_event_loop(loop)
 
-    es = Elasticsearch(hosts=[{'host': es_server['host'],
-                               'port': es_server['port']}],
-                       http_auth=es_server['auth'])
+    es = Elasticsearch()
 
     auto_close(es)
 

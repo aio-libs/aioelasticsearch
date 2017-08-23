@@ -51,7 +51,7 @@ async def test_scan_simple(es, populate):
         doc_type=doc_type,
         size=scroll_size,
     ) as scan:
-        assert scan.scroll_id is not None
+        assert isinstance(scan.scroll_id, str)
         assert scan.total == 10
         async for doc in scan:
             ids.add(doc['_id'])
