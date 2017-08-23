@@ -319,7 +319,7 @@ class AIOHttpTransport(Transport):
 
         if body is not None:
             try:
-                body = body.encode('utf-8', 'surrogatepass')
+                body = body.encode('utf-8')
             except (UnicodeDecodeError, AttributeError):
                 # bytes/str - no need to re-encode
                 pass
