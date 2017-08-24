@@ -1,11 +1,11 @@
 import asyncio
 import gc
-import socket
 import time
 import uuid
 
 import elasticsearch
 import pytest
+from aiohttp.test_utils import unused_port
 from docker import from_env as docker_from_env
 
 import aioelasticsearch
@@ -30,6 +30,7 @@ def loop(request):
 
 @pytest.fixture(scope='session')
 def session_id():
+    '''Unique session identifier, random string.'''
     return str(uuid.uuid4())
 
 
@@ -61,16 +62,7 @@ def pytest_generate_tests(metafunc):
 
 
 @pytest.fixture(scope='session')
-def unused_port():
-    def factory():
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('127.0.0.1', 0))
-            return s.getsockname()[1]
-    return factory
-
-
-@pytest.fixture(scope='session')
-def es_container(docker, session_id, es_tag, unused_port, request):
+def es_container(docker, session_id, es_tag, request):
     image = 'docker.elastic.co/elasticsearch/elasticsearch:{}'.format(es_tag)
 
     if not request.config.option.no_pull:
