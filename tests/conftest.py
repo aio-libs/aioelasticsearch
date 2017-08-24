@@ -59,7 +59,7 @@ def pytest_generate_tests(metafunc):
             tags = ['5.5.1']
         else:
             tags = list(tags)
-        metafunc.parametrize('es_tag', tags, scope='session')
+        metafunc.parametrize("es_tag", tags, scope='session')
 
 
 @pytest.fixture(scope='session')
@@ -144,9 +144,11 @@ def es_clean(es_container):
             http_auth=es_container['auth'],
         )
 
-        es.transport.perform_request('DELETE', '/_template/*')
-        es.transport.perform_request('DELETE', '/_all')
-        es.transport.close()
+        try:
+            es.transport.perform_request('DELETE', '/_template/*')
+            es.transport.perform_request('DELETE', '/_all')
+        finally:
+            es.transport.close()
 
     return do
 
