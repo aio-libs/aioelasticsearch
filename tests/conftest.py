@@ -40,14 +40,14 @@ def docker():
 
 
 def pytest_addoption(parser):
-    parser.addoption('--es_tag', action='append', default=[],
-                     help=('Elasticsearch server versions. '
-                           'May be used several times. '
-                           '5.5.1 by default'))
-    parser.addoption('--no-pull', action='store_true', default=False,
-                     help='Don\'t perform docker images pulling')
-    parser.addoption('--local-docker', action='store_true', default=False,
-                     help='Use 0.0.0.0 as docker host, useful for MacOs X')
+    parser.addoption("--es_tag", action="append", default=[],
+                     help=("Elasticsearch server versions. "
+                           "May be used several times. "
+                           "5.5.1 by default"))
+    parser.addoption("--no-pull", action="store_true", default=False,
+                     help="Don't perform docker images pulling")
+    parser.addoption("--local-docker", action="store_true", default=False,
+                     help="Use 0.0.0.0 as docker host, useful for MacOs X")
 
 
 def pytest_generate_tests(metafunc):
@@ -71,9 +71,7 @@ def unused_port():
 
 @pytest.fixture(scope='session')
 def es_container(docker, session_id, es_tag, unused_port, request):
-    image = 'docker.elastic.co/elasticsearch/elasticsearch:{es_tag}'.format(
-        es_tag=es_tag,
-    )
+    image = 'docker.elastic.co/elasticsearch/elasticsearch:{}'.format(es_tag)
 
     if not request.config.option.no_pull:
         docker.images.pull(image)
