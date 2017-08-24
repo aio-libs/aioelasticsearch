@@ -124,7 +124,7 @@ def es_container(docker, session_id, es_tag, request):
         finally:
             es.transport.close()
     else:
-        pytest.fail('Cannot start elastic server')
+        pytest.fail("Cannot start elastic server")
 
     return {
         'host': docker_host,
