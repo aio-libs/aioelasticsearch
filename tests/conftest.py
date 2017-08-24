@@ -99,7 +99,7 @@ def es_container(docker, session_id, es_tag, request):
     atexit.register(defer)
 
     if request.config.option.local_docker:
-        docker_host = '127.0.0.1'
+        docker_host = '0.0.0.0'
     else:
         inspection = docker.api.inspect_container(container.id)
         docker_host = inspection['NetworkSettings']['IPAddress']
