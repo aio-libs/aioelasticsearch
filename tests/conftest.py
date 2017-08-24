@@ -1,4 +1,5 @@
 import asyncio
+import atexit
 import gc
 import time
 import uuid
@@ -68,81 +69,93 @@ def es_container(docker, session_id, es_tag, request):
     if not request.config.option.no_pull:
         docker.images.pull(image)
 
-    es_port_9200 = unused_port()
-    es_port_9300 = unused_port()
+    es_auth = ('elastic', 'changeme')
 
-    auth = ('elastic', 'changeme')
+    if request.config.option.local_docker:
+        es_port_9200 = es_access_port = unused_port()
+        es_port_9300 = unused_port()
+    else:
+        es_port_9200 = es_port_9300 = None
+        es_access_port = 9200
 
-    container = None
+    container = docker.containers.run(
+        image=image,
+        detach=True,
+        name='aioelasticsearch-' + session_id,
+        ports={
+            '9200/tcp': es_port_9200,
+            '9300/tcp': es_port_9300,
+        },
+        environment={
+            'http.host': '0.0.0.0',
+            'transport.host': '127.0.0.1',
+        },
+    )
 
-    try:
-        container = docker.containers.run(
-            image=image,
-            detach=True,
-            name='aioelasticsearch-' + session_id,
-            ports={
-                '9200/tcp': es_port_9200,
-                '9300/tcp': es_port_9300,
-            },
-            environment={
-                'http.host': '0.0.0.0',
-                'transport.host': '127.0.0.1',
-            },
+    def defer():
+        container.kill(signal=9)
+        container.remove(force=True)
+
+    atexit.register(defer)
+
+    if request.config.option.local_docker:
+        docker_host = '127.0.0.1'
+    else:
+        inspection = docker.api.inspect_container(container.id)
+        docker_host = inspection['NetworkSettings']['IPAddress']
+
+    delay = 0.1
+    for i in range(20):
+        es = elasticsearch.Elasticsearch(
+            [{
+                'host': docker_host,
+                'port': es_access_port,
+            }],
+            http_auth=es_auth,
         )
 
-        docker_host = '0.0.0.0'
-
-        delay = 0.1
-        for i in range(10):
-            es = elasticsearch.Elasticsearch(
-                [{
-                    'host': docker_host,
-                    'port': es_port_9200,
-                }],
-                http_auth=auth,
-            )
-
-            try:
-                es.transport.perform_request('GET', '/_nodes/_all/http')
-                break
-            except elasticsearch.TransportError as ex:
-                time.sleep(delay)
-                delay *= 2
-            finally:
-                es.transport.close()
+        try:
+            es.transport.perform_request('GET', '/_nodes/_all/http')
+        except elasticsearch.TransportError as ex:
+            time.sleep(delay)
+            delay *= 2
         else:
-            pytest.fail('Cannot start elastic server')
+            break
+        finally:
+            es.transport.close()
+    else:
+        pytest.fail('Cannot start elastic server')
 
-        ret = {
-            'container': container,
-            'host': docker_host,
-            'port': es_port_9200,
-            'auth': auth,
-        }
-
-        yield ret
-    finally:
-        if container is not None:
-            container.kill()
-            container.remove()
+    return {
+        'host': docker_host,
+        'port': es_access_port,
+        'auth': es_auth,
+    }
 
 
 @pytest.fixture
-def es_server(es_container):
-    es = elasticsearch.Elasticsearch(
-        hosts=[{
-            'host': es_container['host'],
-            'port': es_container['port'],
-        }],
-        http_auth=es_container['auth'],
-    )
+def es_clean(es_container):
+    def do():
+        es = elasticsearch.Elasticsearch(
+            hosts=[{
+                'host': es_container['host'],
+                'port': es_container['port'],
+            }],
+            http_auth=es_container['auth'],
+        )
 
-    es.transport.perform_request('DELETE', '/_template/*')
-    es.transport.perform_request('DELETE', '/_all')
+        es.transport.perform_request('DELETE', '/_template/*')
+        es.transport.perform_request('DELETE', '/_all')
+        es.transport.close()
 
-    yield es_container
+    return do
 
-    es.transport.close()
+
+@pytest.fixture
+def es_server(es_clean, es_container):
+    es_clean()
+
+    return es_container
 
 
 @pytest.fixture
@@ -202,8 +215,8 @@ def pytest_pyfunc_call(pyfuncitem):
 
 
 @pytest.fixture
-def populate(loop):
-    async def do(es, index, doc_type, n, body):
+def populate(es, loop):
+    async def do(index, doc_type, n, body):
         coros = []
 
         await es.indices.create(index)
