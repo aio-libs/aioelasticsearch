@@ -4,25 +4,34 @@ from unittest import mock
 
 import pytest
 
+from aioelasticsearch import NotFoundError
 from aioelasticsearch.helpers import Scan, ScanError
 
 
 logger = logging.getLogger('elasticsearch')
 
 
-@pytest.mark.run_loop
-async def test_scan_initial_raises(es):
+def test_scan_total_without_context_manager(es):
     scan = Scan(es)
 
     with pytest.raises(RuntimeError):
-        async for scroll in scan:  # noqa
-            pass
+        scan.total
+
+
+@pytest.mark.run_loop
+async def test_scan_async_for_without_context_manager(es):
+    scan = Scan(es)
+
+    with pytest.raises(RuntimeError):
+        async for doc in scan:
+            doc
+
+
+def test_scan_scroll_id_without_context_manager(es):
+    scan = Scan(es)
 
     with pytest.raises(RuntimeError):
         scan.scroll_id
-
-    with pytest.raises(RuntimeError):
-        scan.total
 
 
 @pytest.mark.run_loop
@@ -33,7 +42,7 @@ async def test_scan_simple(es, populate):
     n = 10
 
     body = {'foo': 1}
-    await populate(es, index, doc_type, n, body)
+    await populate(index, doc_type, n, body)
     ids = set()
 
     async with Scan(
@@ -42,7 +51,7 @@ async def test_scan_simple(es, populate):
         doc_type=doc_type,
         size=scroll_size,
     ) as scan:
-        assert scan.scroll_id is not None
+        assert isinstance(scan.scroll_id, str)
         assert scan.total == 10
         async for doc in scan:
             ids.add(doc['_id'])
@@ -53,40 +62,44 @@ async def test_scan_simple(es, populate):
                            '_type': 'type_2',
                            'sort': mock.ANY}
 
-    assert ids == set(str(i) for i in range(10))
+    assert ids == {str(i) for i in range(10)}
 
 
-@pytest.mark.parametrize('n,scroll_size', [
-    (0, 1),  # no results
-    (6, 6),  # 1 scroll
-    (6, 8),  # 1 scroll
-    (6, 3),  # 2 scrolls
-    (6, 4),  # 2 scrolls
-    (6, 2),  # 3 scrolls
-    (6, 1),  # 6 scrolls
-])
+# https://github.com/pytest-dev/pytest/issues/519
+# can not use parametrize here
 @pytest.mark.run_loop
-async def test_scan_equal_chunks_for_loop(es, n, scroll_size, populate):
-    index = 'test_aioes'
-    doc_type = 'type_1'
-    body = {'foo': 1}
+async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
+    for n, scroll_size in [
+        (0, 1),  # no results
+        (6, 6),  # 1 scroll
+        (6, 8),  # 1 scroll
+        (6, 3),  # 2 scrolls
+        (6, 4),  # 2 scrolls
+        (6, 2),  # 3 scrolls
+        (6, 1),  # 6 scrolls
+    ]:
+        es_clean()
 
-    await populate(es, index, doc_type, n, body)
+        index = 'test_aioes'
+        doc_type = 'type_1'
+        body = {'foo': 1}
 
-    ids = set()
+        await populate(index, doc_type, n, body)
 
-    async with Scan(
-        es,
-        index=index,
-        doc_type=doc_type,
-        size=scroll_size,
-    ) as scan:
+        ids = set()
 
-        async for doc in scan:
-                ids.add(doc['_id'])
+        async with Scan(
+            es,
+            index=index,
+            doc_type=doc_type,
+            size=scroll_size,
+        ) as scan:
 
-        # check number of unique doc ids
-        assert len(ids) == n == scan.total
+            async for doc in scan:
+                    ids.add(doc['_id'])
+
+            # check number of unique doc ids
+            assert len(ids) == n == scan.total
 
 
 @pytest.mark.run_loop
@@ -101,12 +114,34 @@ async def test_scan_no_mask_index(es):
         doc_type=doc_type,
         size=scroll_size,
     ) as scan:
-        assert scan.scroll_id is not None
+        assert scan.scroll_id is None
         assert scan.total == 0
         cnt = 0
         async for doc in scan:  # noqa
             cnt += 1
         assert cnt == 0
+
+
+@pytest.mark.run_loop
+async def test_scan_no_scroll(es, loop, populate):
+    index = 'test_aioes'
+    doc_type = 'type_2'
+    n = 10
+    scroll_size = 1
+    body = {'foo': 1}
+
+    await populate(index, doc_type, n, body)
+
+    async with Scan(
+        es,
+        size=scroll_size,
+    ) as scan:
+        # same comes after search context expiration
+        await scan._do_clear_scroll()
+
+        with pytest.raises(NotFoundError):
+            async for doc in scan:
+                doc
 
 
 @pytest.mark.run_loop
@@ -121,29 +156,12 @@ async def test_scan_no_index(es):
         doc_type=doc_type,
         size=scroll_size,
     ) as scan:
-        assert scan.scroll_id is not None
+        assert scan.scroll_id is None
         assert scan.total == 0
         cnt = 0
         async for doc in scan:  # noqa
             cnt += 1
         assert cnt == 0
-
-
-@pytest.mark.run_loop
-async def test_scan_iter_without_context_manager(es):
-    index = 'undefined'
-    doc_type = 'any'
-    scroll_size = 3
-
-    scan = Scan(
-        es,
-        index=index,
-        doc_type=doc_type,
-        size=scroll_size,
-    )
-    with pytest.raises(RuntimeError):
-        async for doc in scan:
-            doc
 
 
 @pytest.mark.run_loop
@@ -154,7 +172,7 @@ async def test_scan_warning_on_failed_shards(es, populate, mocker):
     n = 10
 
     body = {'foo': 1}
-    await populate(es, index, doc_type, n, body)
+    await populate(index, doc_type, n, body)
 
     mocker.spy(logger, 'warning')
 
@@ -185,7 +203,7 @@ async def test_scan_exception_on_failed_shards(es, populate, mocker):
     n = 10
 
     body = {'foo': 1}
-    await populate(es, index, doc_type, n, body)
+    await populate(index, doc_type, n, body)
 
     mocker.spy(logger, 'warning')
 

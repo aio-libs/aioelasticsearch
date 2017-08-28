@@ -12,19 +12,11 @@ async def test_ping(es):
     assert ping
 
 
-@pytest.mark.run_loop
-async def test_str_auth(es, es_server, loop):
-    async with Elasticsearch(loop=loop, hosts=[{'host': es_server['host'],
-                                                'port': es_server['port']}],
-                             http_auth=':'.join(es_server['auth'])) as es1:
-        await es1.ping()
-
-
-@pytest.mark.run_loop
-async def test_elastic_default_loop(es, loop, es_server):
+def test_elastic_default_loop(auto_close, loop):
     asyncio.set_event_loop(loop)
 
-    async with Elasticsearch(hosts=[{'host': es_server['host'],
-                                     'port': es_server['port']}],
-                             http_auth=':'.join(es_server['auth'])) as es1:
-        assert es1.loop is loop
+    es = Elasticsearch()
+
+    auto_close(es)
+
+    assert es.loop is loop

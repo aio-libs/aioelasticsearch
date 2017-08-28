@@ -1,12 +1,15 @@
 import asyncio
+import atexit
+import gc
 import time
 import uuid
 
 import elasticsearch
 import pytest
+from aiohttp.test_utils import unused_port
 from docker import from_env as docker_from_env
 
-from aioelasticsearch import Elasticsearch
+import aioelasticsearch
 
 
 @pytest.fixture
@@ -17,9 +20,13 @@ def loop(request):
 
     yield loop
 
-    loop.call_soon(loop.stop)
-    loop.run_forever()
-    loop.close()
+    if not loop._closed:
+        loop.call_soon(loop.stop)
+        loop.run_forever()
+        loop.close()
+
+    gc.collect()
+    asyncio.set_event_loop(None)
 
 
 @pytest.fixture(scope='session')
@@ -41,6 +48,8 @@ def pytest_addoption(parser):
                            "5.5.1 by default"))
     parser.addoption("--no-pull", action="store_true", default=False,
                      help="Don't perform docker images pulling")
+    parser.addoption("--local-docker", action="store_true", default=False,
+                     help="Use 0.0.0.0 as docker host, useful for MacOs X")
 
 
 def pytest_generate_tests(metafunc):
@@ -56,60 +65,113 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture(scope='session')
 def es_container(docker, session_id, es_tag, request):
     image = 'docker.elastic.co/elasticsearch/elasticsearch:{}'.format(es_tag)
+
     if not request.config.option.no_pull:
         docker.images.pull(image)
-    container = docker.containers.run(
-        image, detach=True,
-        name='aioelasticsearch-'+session_id,
-        ports={'9200/tcp': None, '9300/tcp': None},
-        environment={'http.host': '0.0.0.0',
-                     'transport.host': '127.0.0.1'})
 
-    inspection = docker.api.inspect_container(container.id)
-    host = inspection['NetworkSettings']['IPAddress']
-    delay = 0.001
-    for i in range(100):
-        es = elasticsearch.Elasticsearch([host],
-                                         http_auth=('elastic', 'changeme'))
+    es_auth = ('elastic', 'changeme')
+
+    if request.config.option.local_docker:
+        es_port_9200 = es_access_port = unused_port()
+        es_port_9300 = unused_port()
+    else:
+        es_port_9200 = es_port_9300 = None
+        es_access_port = 9200
+
+    container = docker.containers.run(
+        image=image,
+        detach=True,
+        name='aioelasticsearch-' + session_id,
+        ports={
+            '9200/tcp': es_port_9200,
+            '9300/tcp': es_port_9300,
+        },
+        environment={
+            'http.host': '0.0.0.0',
+            'transport.host': '127.0.0.1',
+        },
+    )
+
+    def defer():
+        container.kill(signal=9)
+        container.remove(force=True)
+
+    atexit.register(defer)
+
+    if request.config.option.local_docker:
+        docker_host = '0.0.0.0'
+    else:
+        inspection = docker.api.inspect_container(container.id)
+        docker_host = inspection['NetworkSettings']['IPAddress']
+
+    delay = 0.1
+    for i in range(20):
+        es = elasticsearch.Elasticsearch(
+            [{
+                'host': docker_host,
+                'port': es_access_port,
+            }],
+            http_auth=es_auth,
+        )
+
         try:
             es.transport.perform_request('GET', '/_nodes/_all/http')
-            break
         except elasticsearch.TransportError as ex:
             time.sleep(delay)
             delay *= 2
+        else:
+            break
         finally:
             es.transport.close()
     else:
         pytest.fail("Cannot start elastic server")
-    ret = {'container': container,
-           'host': host,
-           'port': 9200,
-           'auth': ('elastic', 'changeme')}
-    yield ret
 
-    container.kill()
-    container.remove()
+    return {
+        'host': docker_host,
+        'port': es_access_port,
+        'auth': es_auth,
+    }
 
 
 @pytest.fixture
-def es_server(es_container):
-    host = es_container['host']
-    es = elasticsearch.Elasticsearch([host],
-                                     http_auth=('elastic', 'changeme'))
+def es_clean(es_container):
+    def do():
+        es = elasticsearch.Elasticsearch(
+            hosts=[{
+                'host': es_container['host'],
+                'port': es_container['port'],
+            }],
+            http_auth=es_container['auth'],
+        )
 
-    es.transport.perform_request('DELETE', '/_template/*')
-    es.transport.perform_request('DELETE', '/_all')
+        try:
+            es.transport.perform_request('DELETE', '/_template/*')
+            es.transport.perform_request('DELETE', '/_all')
+        finally:
+            es.transport.close()
+
+    return do
+
+
+@pytest.fixture
+def es_server(es_clean, es_container):
+    es_clean()
 
     return es_container
 
 
 @pytest.fixture
-def es(loop, es_server):
-    es = Elasticsearch(loop=loop, hosts=[{'host': es_server['host'],
-                                          'port': es_server['port']}],
-                       http_auth=es_server['auth'])
-    yield es
-    loop.run_until_complete(es.close())
+def es(es_server, auto_close, loop):
+    es = aioelasticsearch.Elasticsearch(
+        hosts=[{
+            'host': es_server['host'],
+            'port': es_server['port'],
+        }],
+        http_auth=es_server['auth'],
+        loop=loop,
+    )
+
+    return auto_close(es)
 
 
 @pytest.fixture
@@ -121,6 +183,7 @@ def auto_close(loop):
         return arg
 
     yield f
+
     for arg in close_list:
         loop.run_until_complete(arg.close())
 
@@ -154,8 +217,8 @@ def pytest_pyfunc_call(pyfuncitem):
 
 
 @pytest.fixture
-def populate(loop):
-    async def do(es, index, doc_type, n, body):
+def populate(es, loop):
+    async def do(index, doc_type, n, body):
         coros = []
 
         await es.indices.create(index)
@@ -167,9 +230,9 @@ def populate(loop):
                     doc_type=doc_type,
                     id=str(i),
                     body=body,
-                    refresh=True,
                 ),
             )
 
         await asyncio.gather(*coros, loop=loop)
+        await es.indices.refresh()
     return do

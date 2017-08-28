@@ -1,7 +1,6 @@
 import asyncio
 
 from elasticsearch import Elasticsearch as _Elasticsearch  # noqa # isort:skip
-
 from elasticsearch.connection_pool import (ConnectionSelector, # noqa # isort:skip
                                            RoundRobinSelector)
 from elasticsearch.serializer import JSONSerializer  # noqa # isort:skip
@@ -11,7 +10,7 @@ from .pool import AIOHttpConnectionPool  # noqa # isort:skip
 from .transport import AIOHttpTransport  # noqa # isort:skip
 
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 
 class Elasticsearch(_Elasticsearch):

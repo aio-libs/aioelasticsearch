@@ -93,7 +93,8 @@ class Scan:
         if self._initial:
             raise RuntimeError("Scan operations should be done "
                                "inside async context manager")
-        return self._total
+
+        return self._scroll_id
 
     @property
     def total(self):
@@ -125,26 +126,20 @@ class Scan:
             self._done = not self._hits or self._scroll_id is None
 
     async def _do_scroll(self):
-        try:
-            resp = await self._es.scroll(
-                self._scroll_id,
-                scroll=self._scroll,
-            )
-        except NotFoundError:  # pragma: no cover
-            # Don't know how to make test case for it
-            # but if search could return 404 on not exsiting index
-            # scroll maybe can do it too
-            self._done = True
+        resp = await self._es.scroll(
+            self._scroll_id,
+            scroll=self._scroll,
+        )
+
+        self._hits = resp['hits']['hits']
+        self._hits_idx = 0
+        self._scroll_id = resp.get('_scroll_id')
+        self._failed_shards = resp['_shards']['failed']
+        self._total_shards = resp['_shards']['total']
+        self._done = not self._hits or self._scroll_id is None
+
+        if self._done:
             raise StopAsyncIteration
-        else:
-            self._hits = resp['hits']['hits']
-            self._hits_idx = 0
-            self._scroll_id = resp.get('_scroll_id')
-            self._failed_shards = resp['_shards']['failed']
-            self._total_shards = resp['_shards']['total']
-            self._done = not self._hits or self._scroll_id is None
-            if self._done:
-                raise StopAsyncIteration
 
     async def _do_clear_scroll(self):
         if self._scroll_id is not None and self._clear_scroll:

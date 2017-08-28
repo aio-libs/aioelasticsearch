@@ -23,19 +23,6 @@ class DummyConnection(AIOHttpConnection):
 
 
 @pytest.mark.run_loop
-async def test_body_surrogates_replaced_encoded_into_bytes(loop, auto_close):
-    t = AIOHttpTransport([{}], connection_class=DummyConnection, loop=loop)
-    auto_close(t)
-
-    await t.perform_request('GET', '/', body='你好\uda6a')
-    conn = await t.get_connection()
-
-    assert len(conn.calls) == 1
-    assert ('GET', '/', None,
-            b'\xe4\xbd\xa0\xe5\xa5\xbd\xed\xa9\xaa') == conn.calls[0][0]
-
-
-@pytest.mark.run_loop
 async def test_custom_serializers(auto_close, loop):
     serializer = object()
     t = auto_close(AIOHttpTransport([{}],
