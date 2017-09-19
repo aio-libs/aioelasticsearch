@@ -14,8 +14,6 @@ script:
   - PYTHONASYNCIODEBUG=x pytest tests
 after_success:
   - codecov
-cache:
-  directories:
-    - $HOME/.cache/pip
+cache: pip
 notifications:
   email: false
