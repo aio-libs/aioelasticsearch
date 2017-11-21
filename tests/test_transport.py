@@ -395,3 +395,28 @@ async def test_request_without_data(loop, auto_close):
 
     ret = await t.perform_request('GET', '/')
     assert ret == ''
+
+
+@pytest.mark.run_loop
+async def test_request_headers(loop, auto_close, es_server, mocker):
+    t = auto_close(AIOHttpTransport(
+        [{'host': es_server['host'],
+          'port': es_server['port']}],
+        http_auth=es_server['auth'],
+        loop=loop,
+        headers={'H1': 'V1', 'H2': 'V2'},
+    ))
+
+    for conn in t.connection_pool.connections:
+        mocker.spy(conn.session, 'request')
+
+    await t.perform_request('GET', '/', headers={'H1': 'VV1', 'H3': 'V3'})
+
+    session = (await t.get_connection()).session
+    _, kwargs = session.request.call_args
+    assert kwargs['headers'] == {
+        'H1': 'VV1',
+        'H2': 'V2',
+        'H3': 'V3',
+        'Content-Type': 'application/json',
+    }

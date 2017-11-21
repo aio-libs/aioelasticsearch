@@ -81,6 +81,7 @@ class AIOHttpConnection(Connection):
         url,
         params=None,
         body=None,
+        headers=None,
         timeout=None,
         ignore=()
     ):
@@ -96,7 +97,7 @@ class AIOHttpConnection(Connection):
                     method,
                     url,
                     data=body,
-                    headers=self.headers,
+                    headers=self._build_headers(headers),
                     timeout=None,
                 )
                 raw_data = await response.text()
@@ -170,3 +171,11 @@ class AIOHttpConnection(Connection):
         )
 
         return response.status, response.headers, raw_data
+
+    def _build_headers(self, headers):
+        if headers:
+            final_headers = self.headers.copy()
+            final_headers.update(headers)
+        else:
+            final_headers = self.headers
+        return final_headers

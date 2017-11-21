@@ -96,31 +96,29 @@ class AIOHttpTransport(Transport):
                                                             loop=self.loop)
             self.initial_sniff_task.add_done_callback(_initial_sniff_reset)
 
+    def _create_connection(self, host):
+        # if this is not the initial setup look at the existing connection
+        # options and identify connections that haven't changed and can be
+        # kept around.
+        if hasattr(self, 'connection_pool'):
+            existing_connections = (self.connection_pool.connection_opts +
+                                    self.seed_connection_opts)
+
+            for (connection, old_host) in existing_connections:
+                if old_host == host:
+                    return connection
+
+        kwargs = self.kwargs.copy()
+        kwargs.update(host)
+        kwargs['loop'] = self.loop
+
+        return self.connection_class(**kwargs)
+
     def set_connections(self, hosts):
         if self._closed:
             raise RuntimeError("Transport is closed")
 
-        def _create_connection(host):
-            # if this is not the initial setup look at the existing connection
-            # options and identify connections that haven't changed and can be
-            # kept around.
-            if hasattr(self, 'connection_pool'):
-                existing_connections = (self.connection_pool.connection_opts +
-                                        self.seed_connection_opts)
-
-                for (connection, old_host) in existing_connections:
-                    if old_host == host:
-                        return connection
-
-            kwargs = self.kwargs.copy()
-            kwargs.update(host)
-            kwargs['loop'] = self.loop
-
-            return self.connection_class(**kwargs)
-
-        connections = map(_create_connection, hosts)
-
-        connections = list(zip(connections, hosts))
+        connections = [(self._create_connection(host), host) for host in hosts]
 
         if len(connections) == 1:
             self.connection_pool = DummyConnectionPool(
@@ -246,7 +244,7 @@ class AIOHttpTransport(Transport):
     async def _perform_request(
         self,
         method, url, params, body,
-        ignore=(), timeout=None,
+        ignore=(), timeout=None, headers=None,
     ):
         for attempt in count(1):  # pragma: no branch
             connection = await self.get_connection()
@@ -255,7 +253,7 @@ class AIOHttpTransport(Transport):
 
                 status, headers, data = await connection.perform_request(
                     method, url, params, body,
-                    ignore=ignore, timeout=timeout,
+                    ignore=ignore, timeout=timeout, headers=headers,
                 )
             except TransportError as e:
                 if method == 'HEAD' and e.status_code == 404:
@@ -289,7 +287,7 @@ class AIOHttpTransport(Transport):
 
                 return data
 
-    async def perform_request(self, method, url, params=None, body=None):
+    async def perform_request(self, method, url, headers=None, params=None, body=None):  # noqa
         if self._closed:
             raise RuntimeError("Transport is closed")
         # yarl fix for https://github.com/elastic/elasticsearch-py/blob/d4efb81b0695f3d9f64784a35891b732823a9c32/elasticsearch/client/utils.py#L29  # noqa
@@ -335,5 +333,5 @@ class AIOHttpTransport(Transport):
 
         return await self._perform_request(
             method, url, params, body,
-            ignore=ignore, timeout=timeout,
+            ignore=ignore, timeout=timeout, headers=headers,
         )
