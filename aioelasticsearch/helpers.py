@@ -47,7 +47,7 @@ class Scan:
         self._done = False
         self._hits = []
         self._hits_idx = 0
-        self._failed_shards = 0
+        self._successful_shards = 0
         self._total_shards = 0
 
     async def __aenter__(self):  # noqa
@@ -71,16 +71,16 @@ class Scan:
             raise StopAsyncIteration
 
         if self._hits_idx >= len(self._hits):
-            if self._failed_shards:
+            if self._successful_shards < self._total_shards:
                 logger.warning(
-                    'Scroll request has failed on %d shards out of %d.',
-                    self._failed_shards, self._total_shards
+                    'Scroll request has only succeeded on %d shards out of %d.',  # noqa
+                    self._successful_shards, self._total_shards
                 )
                 if self._raise_on_error:
                     raise ScanError(
                         self._scroll_id,
-                        'Scroll request has failed on {} shards out of {}.'
-                        .format(self._failed_shards, self._total_shards)
+                        'Scroll request has only succeeded on {} shards out of {}.'  # noqa
+                        .format(self._successful_shards, self._total_shards)
                     )
 
             await self._do_scroll()
@@ -117,26 +117,15 @@ class Scan:
             self._done = True
             return
         else:
-            self._hits = resp['hits']['hits']
-            self._hits_idx = 0
-            self._scroll_id = resp.get('_scroll_id')
             self._total = resp['hits']['total']
-            self._failed_shards = resp['_shards']['failed']
-            self._total_shards = resp['_shards']['total']
-            self._done = not self._hits or self._scroll_id is None
+            self._update_state(resp)
 
     async def _do_scroll(self):
         resp = await self._es.scroll(
             self._scroll_id,
             scroll=self._scroll,
         )
-
-        self._hits = resp['hits']['hits']
-        self._hits_idx = 0
-        self._scroll_id = resp.get('_scroll_id')
-        self._failed_shards = resp['_shards']['failed']
-        self._total_shards = resp['_shards']['total']
-        self._done = not self._hits or self._scroll_id is None
+        self._update_state(resp)
 
         if self._done:
             raise StopAsyncIteration
@@ -147,3 +136,11 @@ class Scan:
                 body={'scroll_id': [self._scroll_id]},
                 ignore=404,
             )
+
+    def _update_state(self, resp):
+        self._hits = resp['hits']['hits']
+        self._hits_idx = 0
+        self._scroll_id = resp.get('_scroll_id')
+        self._successful_shards = resp['_shards']['successful']
+        self._total_shards = resp['_shards']['total']
+        self._done = not self._hits or self._scroll_id is None

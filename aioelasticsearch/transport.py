@@ -315,6 +315,7 @@ class AIOHttpTransport(Transport):
                     if params is None:
                         params = {}
                     params['source'] = body
+                    params['source_content_type'] = self.serializer.mimetype
                     body = None
 
         if body is not None:

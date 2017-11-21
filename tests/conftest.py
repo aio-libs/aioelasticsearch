@@ -56,7 +56,7 @@ def pytest_generate_tests(metafunc):
     if 'es_tag' in metafunc.fixturenames:
         tags = set(metafunc.config.option.es_tag)
         if not tags:
-            tags = ['5.5.1']
+            tags = ['6.0.0']
         else:
             tags = list(tags)
         metafunc.parametrize("es_tag", tags, scope='session')
