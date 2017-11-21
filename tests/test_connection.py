@@ -1,6 +1,6 @@
 import asyncio
 import ssl
-
+from unittest import mock
 
 import aiohttp
 import pytest
@@ -65,45 +65,20 @@ async def test_explicit_session(auto_close, loop):
 
 
 @pytest.mark.run_loop
-async def test_perform_request_bad_cert(auto_close, loop):
+@pytest.mark.parametrize('exc, expected', [
+    (aiohttp.ClientConnectorCertificateError(mock.Mock(), mock.Mock()), SSLError),  # noqa
+    (aiohttp.ClientConnectorSSLError(mock.Mock(), mock.Mock()), SSLError),
+    (aiohttp.ClientError('Other'), ConnectionError),
+])
+async def test_perform_request_ssl_error(auto_close, loop, exc, expected):
     session = aiohttp.ClientSession(loop=loop)
 
     @asyncio.coroutine
     def request(*args, **kwargs):
-        raise ssl.CertificateError()
+        raise exc
     session._request = request
 
     conn = auto_close(AIOHttpConnection(session=session, loop=loop,
                                         use_ssl=True))
-    with pytest.raises(SSLError):
-        await conn.perform_request('HEAD', '/')
-
-
-@pytest.mark.run_loop
-async def test_perform_request_bad_cert2(auto_close, loop):
-    session = aiohttp.ClientSession(loop=loop)
-
-    @asyncio.coroutine
-    def request(*args, **kwargs):
-        raise aiohttp.ClientError('SSL: CERTIFICATE_VERIFY_FAILED')
-    session._request = request
-
-    conn = auto_close(AIOHttpConnection(session=session, loop=loop,
-                                        use_ssl=True))
-    with pytest.raises(SSLError):
-        await conn.perform_request('HEAD', '/')
-
-
-@pytest.mark.run_loop
-async def test_perform_connection_error(auto_close, loop):
-    session = aiohttp.ClientSession(loop=loop)
-
-    @asyncio.coroutine
-    def request(*args, **kwargs):
-        raise aiohttp.ClientError('Other')
-    session._request = request
-
-    conn = auto_close(AIOHttpConnection(session=session, loop=loop,
-                                        use_ssl=True))
-    with pytest.raises(ConnectionError):
+    with pytest.raises(expected):
         await conn.perform_request('HEAD', '/')
