@@ -1,5 +1,4 @@
 import asyncio
-import atexit
 import gc
 import time
 import uuid
@@ -52,18 +51,30 @@ def pytest_addoption(parser):
                      help="Use 0.0.0.0 as docker host, useful for MacOs X")
 
 
-def pytest_generate_tests(metafunc):
-    if 'es_tag' in metafunc.fixturenames:
-        tags = set(metafunc.config.option.es_tag)
-        if not tags:
-            tags = ['6.0.0']
-        else:
-            tags = list(tags)
-        metafunc.parametrize("es_tag", tags, scope='session')
+def pytest_configure(config):
+    """
+    Parametrize ES containers.
+    """
+    tags = set(config.option.es_tag)
+    if not tags:
+        tags = ['6.0.0']
+    else:
+        tags = list(tags)
+
+    es_container._pytestfixturefunction.params = tags
+
+
+CREATED_CONTAINERS = set()
 
 
 @pytest.fixture(scope='session')
-def es_container(docker, session_id, es_tag, request):
+def es_container(docker, session_id, request):
+    es_tag = request.param
+
+    # Make sure containers not created multiple times.
+    assert es_tag not in CREATED_CONTAINERS
+    CREATED_CONTAINERS.add(es_tag)
+
     image = 'docker.elastic.co/elasticsearch/elasticsearch:{}'.format(es_tag)
 
     if not request.config.option.no_pull:
@@ -91,12 +102,6 @@ def es_container(docker, session_id, es_tag, request):
             'transport.host': '127.0.0.1',
         },
     )
-
-    def defer():
-        container.kill(signal=9)
-        container.remove(force=True)
-
-    atexit.register(defer)
 
     if request.config.option.local_docker:
         docker_host = '0.0.0.0'
@@ -126,11 +131,14 @@ def es_container(docker, session_id, es_tag, request):
     else:
         pytest.fail("Cannot start elastic server")
 
-    return {
+    yield {
         'host': docker_host,
         'port': es_access_port,
         'auth': es_auth,
     }
+
+    container.kill(signal=9)
+    container.remove(force=True)
 
 
 @pytest.fixture

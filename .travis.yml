@@ -10,8 +10,8 @@ install:
   - pip install codecov
   - pip install -r requirements.txt
 script:
-  - pytest tests
-  - PYTHONASYNCIODEBUG=x pytest tests
+  - pytest tests --es_tag 6.0.0 --es_tag 5.5.1
+  - PYTHONASYNCIODEBUG=x pytest tests --es_tag 6.0.0 --es_tag 5.5.1
 after_success:
   - codecov
 cache: pip
