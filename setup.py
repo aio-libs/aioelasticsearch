@@ -31,7 +31,6 @@ setup(
     install_requires=[
         'elasticsearch>=6.0.0,<7.0.0',
         'aiohttp>=2.3.0,<3.0.0',
-        'async-timeout>=1.0.0',
     ],
     python_requires='>=3.5.0',
     packages=['aioelasticsearch'],

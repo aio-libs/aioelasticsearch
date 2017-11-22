@@ -1,7 +1,6 @@
 import asyncio
 
 import aiohttp
-import async_timeout
 
 from .exceptions import ConnectionError, ConnectionTimeout, SSLError  # noqa # isort:skip
 
@@ -87,16 +86,14 @@ class AIOHttpConnection(Connection):
 
         start = self.loop.time()
         try:
-            with async_timeout.timeout(timeout or self.timeout,
-                                       loop=self.loop):
-                response = await self.session.request(
-                    method,
-                    url,
-                    data=body,
-                    headers=self._build_headers(headers),
-                    timeout=None,
-                )
-                raw_data = await response.text()
+            response = await self.session.request(
+                method,
+                url,
+                data=body,
+                headers=self._build_headers(headers),
+                timeout=timeout or self.timeout,
+            )
+            raw_data = await response.text()
 
             duration = self.loop.time() - start
 
