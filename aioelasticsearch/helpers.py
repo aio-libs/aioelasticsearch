@@ -25,6 +25,7 @@ class Scan:
         preserve_order=False,
         size=1000,
         clear_scroll=True,
+        scroll_kwargs=None,
         **kwargs
     ):
         self._es = es
@@ -38,6 +39,7 @@ class Scan:
         self._size = size
         self._clear_scroll = clear_scroll
         self._kwargs = kwargs
+        self._scroll_kwargs = scroll_kwargs or {}
 
         self._scroll_id = None
 
@@ -124,6 +126,7 @@ class Scan:
         resp = await self._es.scroll(
             self._scroll_id,
             scroll=self._scroll,
+            **self._scroll_kwargs,
         )
         self._update_state(resp)
 
