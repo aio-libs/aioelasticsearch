@@ -96,29 +96,31 @@ class AIOHttpTransport(Transport):
                                                             loop=self.loop)
             self.initial_sniff_task.add_done_callback(_initial_sniff_reset)
 
-    def _create_connection(self, host):
-        # if this is not the initial setup look at the existing connection
-        # options and identify connections that haven't changed and can be
-        # kept around.
-        if hasattr(self, 'connection_pool'):
-            existing_connections = (self.connection_pool.connection_opts +
-                                    self.seed_connection_opts)
-
-            for (connection, old_host) in existing_connections:
-                if old_host == host:
-                    return connection
-
-        kwargs = self.kwargs.copy()
-        kwargs.update(host)
-        kwargs['loop'] = self.loop
-
-        return self.connection_class(**kwargs)
-
     def set_connections(self, hosts):
         if self._closed:
             raise RuntimeError("Transport is closed")
 
-        connections = [(self._create_connection(host), host) for host in hosts]
+        def _create_connection(host):
+            # if this is not the initial setup look at the existing connection
+            # options and identify connections that haven't changed and can be
+            # kept around.
+            if hasattr(self, 'connection_pool'):
+                existing_connections = (self.connection_pool.connection_opts +
+                                        self.seed_connection_opts)
+
+                for (connection, old_host) in existing_connections:
+                    if old_host == host:
+                        return connection
+
+            kwargs = self.kwargs.copy()
+            kwargs.update(host)
+            kwargs['loop'] = self.loop
+
+            return self.connection_class(**kwargs)
+
+        connections = map(_create_connection, hosts)
+
+        connections = list(zip(connections, hosts))
 
         if len(connections) == 1:
             self.connection_pool = DummyConnectionPool(
