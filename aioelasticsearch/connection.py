@@ -97,17 +97,6 @@ class AIOHttpConnection(Connection):
 
             duration = self.loop.time() - start
 
-        except asyncio.TimeoutError as exc:
-            self.log_request_fail(
-                method,
-                url,
-                url_path,
-                body,
-                self.loop.time() - start,
-                exception=exc,
-            )
-            raise ConnectionTimeout('TIMEOUT', str(exc), exc)
-
         except (aiohttp.ClientConnectorCertificateError,
                 aiohttp.ClientConnectorSSLError) as exc:
             self.log_request_fail(
@@ -119,6 +108,17 @@ class AIOHttpConnection(Connection):
                 exception=exc,
             )
             raise SSLError('N/A', str(exc), exc)
+
+        except asyncio.TimeoutError as exc:
+            self.log_request_fail(
+                method,
+                url,
+                url_path,
+                body,
+                self.loop.time() - start,
+                exception=exc,
+            )
+            raise ConnectionTimeout('TIMEOUT', str(exc), exc)
 
         except aiohttp.ClientError as exc:
             self.log_request_fail(
