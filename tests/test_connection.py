@@ -66,21 +66,21 @@ async def test_explicit_session(auto_close, loop):
 
 
 @pytest.mark.run_loop
-@pytest.mark.parametrize('exc, expected', [
-    (aiohttp.ClientConnectorCertificateError(mock.Mock(), mock.Mock()), SSLError),  # noqa
-    (aiohttp.ClientConnectorSSLError(mock.Mock(), mock.Mock()), SSLError),
-    (aiohttp.ClientError('Other'), ConnectionError),
-    (asyncio.TimeoutError, ConnectionTimeout),
-])
-async def test_perform_request_ssl_error(auto_close, loop, exc, expected):
-    session = aiohttp.ClientSession(loop=loop)
+async def test_perform_request_ssl_error(auto_close, loop):
+    for exc, expected in [
+        (aiohttp.ClientConnectorCertificateError(mock.Mock(), mock.Mock()), SSLError),  # noqa
+        (aiohttp.ClientConnectorSSLError(mock.Mock(), mock.Mock()), SSLError),
+        (aiohttp.ClientError('Other'), ConnectionError),
+        (asyncio.TimeoutError, ConnectionTimeout),
+    ]:
+        session = aiohttp.ClientSession(loop=loop)
 
-    @asyncio.coroutine
-    def request(*args, **kwargs):
-        raise exc
-    session._request = request
+        @asyncio.coroutine
+        def request(*args, **kwargs):
+            raise exc
+        session._request = request
 
-    conn = auto_close(AIOHttpConnection(session=session, loop=loop,
-                                        use_ssl=True))
-    with pytest.raises(expected):
-        await conn.perform_request('HEAD', '/')
+        conn = auto_close(AIOHttpConnection(session=session, loop=loop,
+                                            use_ssl=True))
+        with pytest.raises(expected):
+            await conn.perform_request('HEAD', '/')

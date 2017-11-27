@@ -66,36 +66,38 @@ async def test_scan_simple(es, populate):
 
 
 @pytest.mark.run_loop
-@pytest.mark.parametrize('n, scroll_size', [
-    (0, 1),  # no results
-    (6, 6),  # 1 scroll
-    (6, 8),  # 1 scroll
-    (6, 3),  # 2 scrolls
-    (6, 4),  # 2 scrolls
-    (6, 2),  # 3 scrolls
-    (6, 1),  # 6 scrolls
-])
-async def test_scan_equal_chunks_for_loop(es, populate, n, scroll_size):
-    index = 'test_aioes'
-    doc_type = 'type_1'
-    body = {'foo': 1}
+async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
+    for n, scroll_size in [
+        (0, 1),  # no results
+        (6, 6),  # 1 scroll
+        (6, 8),  # 1 scroll
+        (6, 3),  # 2 scrolls
+        (6, 4),  # 2 scrolls
+        (6, 2),  # 3 scrolls
+        (6, 1),  # 6 scrolls
+    ]:
+        es_clean()
 
-    await populate(index, doc_type, n, body)
+        index = 'test_aioes'
+        doc_type = 'type_1'
+        body = {'foo': 1}
 
-    ids = set()
+        await populate(index, doc_type, n, body)
 
-    async with Scan(
-        es,
-        index=index,
-        doc_type=doc_type,
-        size=scroll_size,
-    ) as scan:
+        ids = set()
 
-        async for doc in scan:
-                ids.add(doc['_id'])
+        async with Scan(
+            es,
+            index=index,
+            doc_type=doc_type,
+            size=scroll_size,
+        ) as scan:
 
-        # check number of unique doc ids
-        assert len(ids) == n == scan.total
+            async for doc in scan:
+                    ids.add(doc['_id'])
+
+            # check number of unique doc ids
+            assert len(ids) == n == scan.total
 
 
 @pytest.mark.run_loop

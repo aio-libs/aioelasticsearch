@@ -51,30 +51,18 @@ def pytest_addoption(parser):
                      help="Use 0.0.0.0 as docker host, useful for MacOs X")
 
 
-def pytest_configure(config):
-    """
-    Parametrize ES containers.
-    """
-    tags = set(config.option.es_tag)
-    if not tags:
-        tags = ['6.0.0']
-    else:
-        tags = list(tags)
-
-    es_container._pytestfixturefunction.params = tags
-
-
-CREATED_CONTAINERS = set()
+def pytest_generate_tests(metafunc):
+    if 'es_tag' in metafunc.fixturenames:
+        tags = set(metafunc.config.option.es_tag)
+        if not tags:
+            tags = ['6.0.0']
+        else:
+            tags = list(tags)
+        metafunc.parametrize("es_tag", tags, scope='session')
 
 
 @pytest.fixture(scope='session')
-def es_container(docker, session_id, request):
-    es_tag = request.param
-
-    # Make sure containers not created multiple times.
-    assert es_tag not in CREATED_CONTAINERS
-    CREATED_CONTAINERS.add(es_tag)
-
+def es_container(docker, session_id, es_tag, request):
     image = 'docker.elastic.co/elasticsearch/elasticsearch:{}'.format(es_tag)
 
     if not request.config.option.no_pull:
