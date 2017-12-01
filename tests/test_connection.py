@@ -1,5 +1,4 @@
 import asyncio
-import ssl
 from unittest import mock
 
 import aiohttp
@@ -70,6 +69,7 @@ async def test_perform_request_ssl_error(auto_close, loop):
     for exc, expected in [
         (aiohttp.ClientConnectorCertificateError(mock.Mock(), mock.Mock()), SSLError),  # noqa
         (aiohttp.ClientConnectorSSLError(mock.Mock(), mock.Mock()), SSLError),
+        (aiohttp.ClientSSLError(mock.Mock(), mock.Mock()), SSLError),
         (aiohttp.ClientError('Other'), ConnectionError),
         (asyncio.TimeoutError, ConnectionTimeout),
     ]:

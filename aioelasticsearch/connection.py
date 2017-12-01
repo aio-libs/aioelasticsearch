@@ -97,8 +97,7 @@ class AIOHttpConnection(Connection):
 
             duration = self.loop.time() - start
 
-        except (aiohttp.ClientConnectorCertificateError,
-                aiohttp.ClientConnectorSSLError) as exc:
+        except aiohttp.ClientSSLError as exc:
             self.log_request_fail(
                 method,
                 url,

@@ -30,7 +30,7 @@ setup(
     long_description=read('README.rst'),
     install_requires=[
         'elasticsearch>=6.0.0,<7.0.0',
-        'aiohttp>=2.3.0,<3.0.0',
+        'aiohttp>=2.3.5,<3.0.0',
     ],
     python_requires='>=3.5.0',
     packages=['aioelasticsearch'],
