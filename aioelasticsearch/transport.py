@@ -246,7 +246,7 @@ class AIOHttpTransport(Transport):
     async def _perform_request(
         self,
         method, url, params, body,
-        ignore=(), timeout=None,
+        ignore=(), timeout=None, headers=None,
     ):
         for attempt in count(1):  # pragma: no branch
             connection = await self.get_connection()
@@ -255,7 +255,7 @@ class AIOHttpTransport(Transport):
 
                 status, headers, data = await connection.perform_request(
                     method, url, params, body,
-                    ignore=ignore, timeout=timeout,
+                    ignore=ignore, timeout=timeout, headers=headers,
                 )
             except TransportError as e:
                 if method == 'HEAD' and e.status_code == 404:
@@ -289,7 +289,7 @@ class AIOHttpTransport(Transport):
 
                 return data
 
-    async def perform_request(self, method, url, params=None, body=None):
+    async def perform_request(self, method, url, headers=None, params=None, body=None):  # noqa
         if self._closed:
             raise RuntimeError("Transport is closed")
         # yarl fix for https://github.com/elastic/elasticsearch-py/blob/d4efb81b0695f3d9f64784a35891b732823a9c32/elasticsearch/client/utils.py#L29  # noqa
@@ -315,11 +315,12 @@ class AIOHttpTransport(Transport):
                     if params is None:
                         params = {}
                     params['source'] = body
+                    params['source_content_type'] = self.serializer.mimetype
                     body = None
 
         if body is not None:
             try:
-                body = body.encode('utf-8')
+                body = body.encode('utf-8', 'surrogatepass')
             except (UnicodeDecodeError, AttributeError):
                 # bytes/str - no need to re-encode
                 pass
@@ -334,5 +335,5 @@ class AIOHttpTransport(Transport):
 
         return await self._perform_request(
             method, url, params, body,
-            ignore=ignore, timeout=timeout,
+            ignore=ignore, timeout=timeout, headers=headers,
         )

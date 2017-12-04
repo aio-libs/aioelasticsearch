@@ -1,5 +1,4 @@
 import asyncio
-import atexit
 import gc
 import time
 import uuid
@@ -56,7 +55,7 @@ def pytest_generate_tests(metafunc):
     if 'es_tag' in metafunc.fixturenames:
         tags = set(metafunc.config.option.es_tag)
         if not tags:
-            tags = ['5.5.1']
+            tags = ['6.0.0']
         else:
             tags = list(tags)
         metafunc.parametrize("es_tag", tags, scope='session')
@@ -92,12 +91,6 @@ def es_container(docker, session_id, es_tag, request):
         },
     )
 
-    def defer():
-        container.kill(signal=9)
-        container.remove(force=True)
-
-    atexit.register(defer)
-
     if request.config.option.local_docker:
         docker_host = '0.0.0.0'
     else:
@@ -126,11 +119,14 @@ def es_container(docker, session_id, es_tag, request):
     else:
         pytest.fail("Cannot start elastic server")
 
-    return {
+    yield {
         'host': docker_host,
         'port': es_access_port,
         'auth': es_auth,
     }
+
+    container.kill(signal=9)
+    container.remove(force=True)
 
 
 @pytest.fixture

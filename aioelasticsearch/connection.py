@@ -1,14 +1,9 @@
 import asyncio
-import ssl
 
 import aiohttp
-import async_timeout
-
-from aiohttp import ClientError
 
 from .exceptions import ConnectionError, ConnectionTimeout, SSLError  # noqa # isort:skip
 
-from aiohttp import BasicAuth
 from elasticsearch.connection import Connection  # noqa # isort:skip
 from yarl import URL  # noqa # isort:skip
 
@@ -39,10 +34,10 @@ class AIOHttpConnection(Connection):
         self.loop = loop
 
         if http_auth is not None:
-            if isinstance(http_auth, BasicAuth):
+            if isinstance(http_auth, aiohttp.BasicAuth):
                 pass
             elif isinstance(http_auth, str):
-                http_auth = BasicAuth(*http_auth.split(':', 1))
+                http_auth = aiohttp.BasicAuth(*http_auth.split(':', 1))
             elif isinstance(http_auth, (tuple, list)):
                 http_auth = aiohttp.BasicAuth(*http_auth)
             else:
@@ -81,6 +76,7 @@ class AIOHttpConnection(Connection):
         url,
         params=None,
         body=None,
+        headers=None,
         timeout=None,
         ignore=()
     ):
@@ -90,20 +86,18 @@ class AIOHttpConnection(Connection):
 
         start = self.loop.time()
         try:
-            with async_timeout.timeout(timeout or self.timeout,
-                                       loop=self.loop):
-                response = await self.session.request(
-                    method,
-                    url,
-                    data=body,
-                    headers=self.headers,
-                    timeout=None,
-                )
-                raw_data = await response.text()
+            response = await self.session.request(
+                method,
+                url,
+                data=body,
+                headers=self._build_headers(headers),
+                timeout=timeout or self.timeout,
+            )
+            raw_data = await response.text()
 
             duration = self.loop.time() - start
 
-        except ssl.CertificateError as exc:
+        except aiohttp.ClientSSLError as exc:
             self.log_request_fail(
                 method,
                 url,
@@ -125,7 +119,7 @@ class AIOHttpConnection(Connection):
             )
             raise ConnectionTimeout('TIMEOUT', str(exc), exc)
 
-        except ClientError as exc:
+        except aiohttp.ClientError as exc:
             self.log_request_fail(
                 method,
                 url,
@@ -135,12 +129,7 @@ class AIOHttpConnection(Connection):
                 exception=exc,
             )
 
-            _exc = str(exc)
-            # aiohttp wraps ssl error
-            if 'SSL: CERTIFICATE_VERIFY_FAILED' in _exc:
-                raise SSLError('N/A', _exc, exc)
-
-            raise ConnectionError('N/A', _exc, exc)
+            raise ConnectionError('N/A', str(exc), exc)
 
         # raise errors based on http status codes
         # let the client handle those if needed
@@ -170,3 +159,11 @@ class AIOHttpConnection(Connection):
         )
 
         return response.status, response.headers, raw_data
+
+    def _build_headers(self, headers):
+        if headers:
+            final_headers = self.headers.copy()
+            final_headers.update(headers)
+        else:
+            final_headers = self.headers
+        return final_headers

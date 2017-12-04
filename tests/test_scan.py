@@ -65,8 +65,6 @@ async def test_scan_simple(es, populate):
     assert ids == {str(i) for i in range(10)}
 
 
-# https://github.com/pytest-dev/pytest/issues/519
-# can not use parametrize here
 @pytest.mark.run_loop
 async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
     for n, scroll_size in [
@@ -187,12 +185,12 @@ async def test_scan_warning_on_failed_shards(es, populate, mocker):
         async for doc in scan:  # noqa
             if i == 3:
                 # once after first scroll
-                scan._failed_shards = 1
-                scan._totl_shards = 2
+                scan._successful_shards = 4
+                scan._total_shards = 5
             i += 1
 
     logger.warning.assert_called_once_with(
-        'Scroll request has failed on %d shards out of %d.', 1, 5)
+        'Scroll request has only succeeded on %d shards out of %d.', 4, 5)
 
 
 @pytest.mark.run_loop
@@ -218,13 +216,13 @@ async def test_scan_exception_on_failed_shards(es, populate, mocker):
             async for doc in scan:  # noqa
                 if i == 3:
                     # once after first scroll
-                    scan._failed_shards = 1
-                    scan._totl_shards = 2
+                    scan._successful_shards = 4
+                    scan._total_shards = 5
                 i += 1
 
         assert (str(cm.value) ==
-                'Scroll request has failed on 1 shards out of 5.')
+                'Scroll request has only succeeded on 4 shards out of 5.')
 
     assert i == 6
     logger.warning.assert_called_once_with(
-        'Scroll request has failed on %d shards out of %d.', 1, 5)
+        'Scroll request has only succeeded on %d shards out of %d.', 4, 5)
