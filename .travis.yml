@@ -17,3 +17,14 @@ after_success:
 cache: pip
 notifications:
   email: false
+
+deploy:
+  provider: pypi
+  user: andrew.svetlov
+  password:
+    secure: "IbyeWME6qs6fGiGxTIefaLcGfMi7Em/r4bHOTETFHrXf7fIUzqV6JMlg0xE2BOcapfjgzwqUL2eIOKV814scMRijIdoBSYWORzAgaojh1wLGMdpsVLEl+QfbAfTEQTWWypKZ3CgeVGSnQGvdpGGQWbG9kAv0ejbyBvc/8sCondlmLIpLEs68Z1EyIF4Lmp2q2HVAsPOKVKxyaBNP75Fe0c1D/ARem6mT046xKZ5Cz/ksamqT1XzQYz62X+hg7XZr8l2GKvyI+edeaXJei4AKlzdPixLo8eFxoxuesqRLLtUwwNKAG8Bfs9hkN2KexL4hEO/YaNvqSNXXXbBjBOijmQu+SzVCzwag5YvycBLDS35aYeG+S/IIAshHlDcmaknf5NOldt2GS52Xdo/MYrAaiz5RdfBLW347hc9FqS9bwB+Wf5+I5nvxLUlVoZT2pmMi0zm21VSkFtSGrNJTPyI5s/gfn9X7U3uRIeLdBJIgFLs5GDIlJe1dkK81DYJAb6kYO27Pzr2vbZGHk8a0OL0TxvvWlnt7S4EciQlgNjrBtGjTsTy8Jd/W/B/vmmdaaDHBfKsJTZi/amqsDSneZ5Ee7DqyLEqXiWrRIU+Ibx8t3ChM48wqOsgdmIrL5rylVigKrxyRGSM1jknbE9iUrq1GgZXq8x76ncID00QnWJPYA+w="
+  distributions: "sdist bdist_wheel"
+  on:
+    tags: true
+    all_branches: true
+    python: 3.5
