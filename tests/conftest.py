@@ -44,7 +44,7 @@ def pytest_addoption(parser):
     parser.addoption("--es_tag", action="append", default=[],
                      help=("Elasticsearch server versions. "
                            "May be used several times. "
-                           "5.5.1 by default"))
+                           "6.0.0 by default"))
     parser.addoption("--no-pull", action="store_true", default=False,
                      help="Don't perform docker images pulling")
     parser.addoption("--local-docker", action="store_true", default=False,
@@ -109,7 +109,7 @@ def es_container(docker, session_id, es_tag, request):
 
         try:
             es.transport.perform_request('GET', '/_nodes/_all/http')
-        except elasticsearch.TransportError as ex:
+        except elasticsearch.TransportError:
             time.sleep(delay)
             delay *= 2
         else:
