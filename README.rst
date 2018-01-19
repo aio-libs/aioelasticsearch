@@ -67,3 +67,10 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
     loop = asyncio.get_event_loop()
     loop.run_until_complete(go())
     loop.close()
+
+Thanks
+------
+
+The library was donated by `Ocean S.A. <https://ocean.io/>`_
+
+Thanks to the company for contribution.
