@@ -24,3 +24,4 @@ htmlcov
 deps/
 docs/_build/
 .idea/
+.pytest_cache
