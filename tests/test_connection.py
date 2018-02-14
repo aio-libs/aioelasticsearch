@@ -3,6 +3,7 @@ from unittest import mock
 
 import aiohttp
 import pytest
+from aiohttp.test_utils import make_mocked_coro
 from elasticsearch import ConnectionTimeout
 
 from aioelasticsearch.connection import (
@@ -75,10 +76,7 @@ async def test_perform_request_ssl_error(auto_close, loop):
     ]:
         session = aiohttp.ClientSession(loop=loop)
 
-        @asyncio.coroutine
-        def request(*args, **kwargs):
-            raise exc
-        session._request = request
+        session._request = make_mocked_coro(raise_exception=exc)
 
         conn = auto_close(AIOHttpConnection(session=session, loop=loop,
                                             use_ssl=True))
