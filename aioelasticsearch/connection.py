@@ -71,9 +71,8 @@ class AIOHttpConnection(Connection):
                 connector=aiohttp.TCPConnector(
                     limit=maxsize,
                     use_dns_cache=kwargs.get('use_dns_cache', False),
-                    ssl_context=ssl_context,
-                    verify_ssl=self.verify_certs,
                     loop=self.loop,
+                    **kwargs,
                 ),
             )
 
