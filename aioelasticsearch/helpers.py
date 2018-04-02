@@ -2,7 +2,6 @@ import asyncio
 
 import logging
 from operator import methodcaller
-from typing import List
 
 from aioelasticsearch import NotFoundError
 from elasticsearch.helpers import ScanError, _chunk_actions, expand_action
@@ -152,7 +151,7 @@ class Scan:
         self._done = not self._hits or self._scroll_id is None
 
 
-async def worker_bulk(client, datas: List[dict], actions: List[str],  **kwargs):
+async def worker_bulk(client, datas , actions,  **kwargs):
     try:
         resp = await client.bulk("\n".join(actions) + '\n', **kwargs)
     except TransportError as e:
