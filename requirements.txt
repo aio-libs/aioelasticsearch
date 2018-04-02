@@ -1,4 +1,4 @@
-aiohttp==2.3.10
+aiohttp==3.1.1
 flake8==3.5.0
 ipdb==0.10.3
 ipython==6.2.1
