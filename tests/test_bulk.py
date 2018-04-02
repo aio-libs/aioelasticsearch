@@ -5,6 +5,7 @@ import pytest
 
 from aioelasticsearch.helpers import bulk
 
+
 logger = logging.getLogger('elasticsearch')
 
 
