@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import logging
 
 import pytest
@@ -69,6 +70,8 @@ async def test_concurrency_bulk(es):
 
 @pytest.mark.run_loop
 async def test_bulk_raise_exception(loop):
+
+    asyncio.set_event_loop(loop)
     es = Elasticsearch()
     datas = [{'_op_type': 'delete',
               '_index': 'test_aioes',
