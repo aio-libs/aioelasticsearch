@@ -3,7 +3,7 @@ import logging
 
 import pytest
 
-from aioelasticsearch.helpers import bulk
+from aioelasticsearch.helpers import bulk, concurrency_bulk
 
 
 logger = logging.getLogger('elasticsearch')
@@ -38,6 +38,11 @@ async def test_bulk_simple(es):
     assert success == 10
     assert fails == 0
 
+    success, fails = await bulk(es, gen_data1(),
+                                stats_only=False)
+    assert success == 10
+    assert fails is []
+
 
 @pytest.mark.run_loop
 async def test_bulk_fails(es):
@@ -49,3 +54,14 @@ async def test_bulk_fails(es):
     success, fails = await bulk(es, datas, stats_only=True)
     assert success == 0
     assert fails == 1
+
+
+@pytest.mark.run_loop
+async def test_concurrency_bulk(es):
+    success, fails = await concurrency_bulk(es, gen_data1())
+    assert success == 10
+    assert fails == 0
+
+    success, fails = await concurrency_bulk(es, gen_data2())
+    assert success == 10
+    assert fails == 0

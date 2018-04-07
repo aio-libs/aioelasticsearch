@@ -209,26 +209,49 @@ async def bulk(client, actions, concurrency_limit=2, chunk_size=500,
                expand_action_callback=expand_action, max_retries=0,
                initial_backoff=2, max_backoff=600, stats_only=False, **kwargs):
 
-    async def concurrency_wrapper(chunk_iter):
+    finish_count = 0
+    if stats_only:
+        fail_datas = 0
+    else:
+        fail_datas = []
 
-        partial_count = 0
+    chunk_action_iter = _chunk_actions(actions, chunk_size, max_chunk_bytes,
+                                       client.transport.serializer)
+
+    for bulk_data, bulk_action in chunk_action_iter:
+        coroutine = _process_bulk(client, bulk_data, bulk_action, **kwargs)
+        count, fails = await _retry_handler(client,
+                                            coroutine,
+                                            max_retries,
+                                            initial_backoff,
+                                            max_backoff, **kwargs)
+        finish_count += count
         if stats_only:
-            partial_fail = 0
+            fail_datas += len(fails)
         else:
-            partial_fail = []
-        for bulk_data, bulk_action in chunk_iter:
-            futures = [worker_bulk(client, bulk_data, bulk_action, **kwargs)]
+            fail_datas.extend(fails)
+
+    return finish_count, fail_datas
+
+
+async def concurrency_bulk(client, actions, concurrency_count=4,
+                           chunk_size=500, max_retries=0,
+                           max_chunk_bytes=100 * 1024 * 1024,
+                           expand_action_callback=expand_action,
+                           initial_backoff=2, max_backoff=600, **kwargs):
+
+    async def concurrency_wrapper(action_iter):
+        p_count = p_fails = 0
+        for bulk_data, bulk_action in action_iter:
+            coroutine = _process_bulk(client, bulk_data, bulk_action, **kwargs)
             count, fails = await _retry_handler(client,
-                                                futures,
+                                                coroutine,
                                                 max_retries,
                                                 initial_backoff,
                                                 max_backoff, **kwargs)
-            partial_count += count
-            if stats_only:
-                partial_fail += len(fails)
-            else:
-                partial_fail.extend(fails)
-        return partial_count, partial_fail
+            p_count += count
+            p_fails += len(fails)
+        return p_count, p_fails
 
     actions = map(expand_action_callback, actions)
     finish_count = 0
