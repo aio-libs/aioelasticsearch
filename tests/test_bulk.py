@@ -4,7 +4,7 @@ import logging
 import pytest
 
 from aioelasticsearch.helpers import bulk, concurrency_bulk
-
+from aioelasticsearch import Elasticsearch, TransportError
 
 logger = logging.getLogger('elasticsearch')
 
@@ -65,3 +65,14 @@ async def test_concurrency_bulk(es):
     success, fails = await concurrency_bulk(es, gen_data2())
     assert success == 10
     assert fails == 0
+
+
+@pytest.mark.run_loop
+async def test_bulk_raise_exception():
+    es = Elasticsearch()
+    datas = [{'_op_type': 'delete',
+              '_index': 'test_aioes',
+              '_type': 'type_3', '_id': "999"}
+             ]
+    with pytest.raises(TransportError):
+        success, fails = await bulk(es, datas, stats_only=True)
