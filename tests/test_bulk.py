@@ -41,7 +41,7 @@ async def test_bulk_simple(es):
     success, fails = await bulk(es, gen_data1(),
                                 stats_only=False)
     assert success == 10
-    assert fails is []
+    assert fails == []
 
 
 @pytest.mark.run_loop
