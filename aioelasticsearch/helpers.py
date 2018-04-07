@@ -204,10 +204,11 @@ async def _retry_handler(client, coroutine, max_retries, initial_backoff,
     return finish, bulk_data
 
 
-async def bulk(client, actions, concurrency_limit=2, chunk_size=500,
+async def bulk(client, actions, chunk_size=500, max_retries=0,
                max_chunk_bytes=100 * 1024 * 1024,
-               expand_action_callback=expand_action, max_retries=0,
-               initial_backoff=2, max_backoff=600, stats_only=False, **kwargs):
+               expand_action_callback=expand_action, initial_backoff=2,
+               max_backoff=600, stats_only=False, **kwargs):
+    actions = map(expand_action_callback, actions)
 
     finish_count = 0
     if stats_only:
@@ -254,26 +255,19 @@ async def concurrency_bulk(client, actions, concurrency_count=4,
         return p_count, p_fails
 
     actions = map(expand_action_callback, actions)
-    finish_count = 0
-    if stats_only:
-        fail_datas = 0
-    else:
-        fail_datas = []
-
     chunk_action_iter = _chunk_actions(actions, chunk_size, max_chunk_bytes,
                                        client.transport.serializer)
 
     tasks = []
-    concurrency_limit = concurrency_limit if concurrency_limit > 0 else 2
-    for i in range(concurrency_limit):
+    for i in range(concurrency_count):
         tasks.append(concurrency_wrapper(chunk_action_iter))
 
-    results = await asyncio.gather(*tasks)
-    for p_count, p_fails in results:
-        finish_count += p_count
-        if stats_only:
-            fail_datas += p_fails
-        else:
-            fail_datas.extend(p_fails)
+    results = await asyncio.gather(*tasks, loop=client.loop)
 
-    return finish_count, fail_datas
+    finish_count = 0
+    fail_count = 0
+    for p_finish, p_fail in results:
+        finish_count += p_finish
+        fail_count += p_fail
+
+    return finish_count, fail_count
