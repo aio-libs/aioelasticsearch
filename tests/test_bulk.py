@@ -68,7 +68,7 @@ async def test_concurrency_bulk(es):
 
 
 @pytest.mark.run_loop
-async def test_bulk_raise_exception():
+async def test_bulk_raise_exception(loop):
     es = Elasticsearch()
     datas = [{'_op_type': 'delete',
               '_index': 'test_aioes',
