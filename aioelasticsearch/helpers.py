@@ -170,15 +170,17 @@ async def _process_bulk(client, datas, actions, **kwargs):
 
 async def _retry_handler(client, coroutine, max_retries, initial_backoff,
                          max_backoff, **kwargs):
+
     finish = 0
     bulk_data = []
     for attempt in range(max_retries + 1):
-        bulk_data = []
         bulk_action = []
         lazy_exception = None
 
         if attempt:
             sleep = min(max_backoff, initial_backoff * 2 ** (attempt - 1))
+            print(f"Retry {attempt}, sleep {sleep}")
+            logger.debug(f"Retry {attempt}, sleep {sleep}")
             await asyncio.sleep(sleep, loop=client.loop)
 
         result = await coroutine
@@ -187,11 +189,20 @@ async def _retry_handler(client, coroutine, max_retries, initial_backoff,
         else:
             lazy_exception = result[0]
 
-        for fail_data in result[1]:
-            for _ in fail_data:
-                bulk_data.append(_)
-        if result[1]:
-            bulk_action.extend(map(client.transport.serializer.dumps, result[1]))
+        bulk_data = result[1]
+
+        for tuple_data in bulk_data:
+
+            data = action = None
+            if len(tuple_data) == 2:
+                data = tuple_data[1]
+            action = tuple_data[0]
+
+            action = client.transport.serializer.dumps(action)
+            bulk_action.append(action)
+            if data is not None:
+                data = client.transport.serializer.dumps(data)
+                bulk_action.append(data)
 
         if not bulk_action or attempt == max_retries:
             break
@@ -225,7 +236,8 @@ async def bulk(client, actions, chunk_size=500, max_retries=0,
                                             coroutine,
                                             max_retries,
                                             initial_backoff,
-                                            max_backoff, **kwargs)
+                                            max_backoff,
+                                            **kwargs)
         finish_count += count
         if stats_only:
             fail_datas += len(fails)
