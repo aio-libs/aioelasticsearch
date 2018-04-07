@@ -52,7 +52,7 @@ async def test_bulk_fails(es):
               '_type': 'type_3', '_id': "999"}
              ]
 
-    success, fails = await bulk(es, datas, stats_only=True)
+    success, fails = await bulk(es, datas, stats_only=True,max_retries=5)
     assert success == 0
     assert fails == 1
 
