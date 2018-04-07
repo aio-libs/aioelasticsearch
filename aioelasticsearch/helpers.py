@@ -151,7 +151,7 @@ class Scan:
         self._done = not self._hits or self._scroll_id is None
 
 
-async def worker_bulk(client, datas , actions,  **kwargs):
+async def _process_bulk(client, datas, actions, **kwargs):
     try:
         resp = await client.bulk("\n".join(actions) + '\n', **kwargs)
     except TransportError as e:
@@ -168,53 +168,40 @@ async def worker_bulk(client, datas , actions,  **kwargs):
     return finish_count, fail_actions
 
 
-def _get_fail_data(results, serializer):
-    finish_count = 0
-    bulk_action = []
+async def _retry_handler(client, coroutine, max_retries, initial_backoff,
+                         max_backoff, **kwargs):
+    finish = 0
     bulk_data = []
-    lazy_exception = None
-    for result in results:
+    for attempt in range(max_retries + 1):
+        bulk_data = []
+        bulk_action = []
+        lazy_exception = None
+
+        if attempt:
+            sleep = min(max_backoff, initial_backoff * 2 ** (attempt - 1))
+            await asyncio.sleep(sleep, loop=client.loop)
+
+        result = await coroutine
         if isinstance(result[0], int):
-            finish_count += result[0]
+            finish += result[0]
         else:
-            if lazy_exception is None:
-                lazy_exception = result[0]
+            lazy_exception = result[0]
 
         for fail_data in result[1]:
             for _ in fail_data:
                 bulk_data.append(_)
         if result[1]:
-            bulk_action.extend(map(serializer.dumps,result[1]))
-    return finish_count, bulk_data, bulk_action, lazy_exception
+            bulk_action.extend(map(client.transport.serializer.dumps, result[1]))
 
-
-async def _retry_handler(client, futures, max_retries, initial_backoff,
-                         max_backoff, **kwargs):
-    finish = 0
-    for attempt in range(max_retries + 1):
-        if attempt:
-            sleep = min(max_backoff, initial_backoff * 2 ** (attempt - 1))
-            await asyncio.sleep(sleep)
-
-        results = await asyncio.gather(*futures,
-                                       return_exceptions=True)
-        futures = []
-
-        count, fail_data, fail_action, lazy_exception = \
-            _get_fail_data(results, client.transport.serializer)
-
-        finish += count
-
-        if not fail_action or attempt == max_retries:
+        if not bulk_action or attempt == max_retries:
             break
 
-        coroutine = worker_bulk(client, fail_data, fail_action, **kwargs)
-        futures.append(asyncio.ensure_future(coroutine))
+        coroutine = _process_bulk(client, bulk_data, bulk_action, **kwargs)
 
     if lazy_exception:
         raise lazy_exception
 
-    return finish, fail_data
+    return finish, bulk_data
 
 
 async def bulk(client, actions, concurrency_limit=2, chunk_size=500,
