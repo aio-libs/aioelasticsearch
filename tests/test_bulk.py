@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from aioelasticsearch.helpers import bulk, concurrency_bulk
+from aioelasticsearch.helpers import bulk, concurrency_bulk, _retry_handler
 from aioelasticsearch import Elasticsearch, TransportError
 
 logger = logging.getLogger('elasticsearch')
@@ -79,3 +79,22 @@ async def test_bulk_raise_exception(loop):
              ]
     with pytest.raises(TransportError):
         success, fails = await bulk(es, datas, stats_only=True)
+
+
+@pytest.mark.run_loop
+async def test_retry_handler(es):
+    async def mock_data():
+        # finish_count, [( es_action, source_data ), ... ]
+        return 0, [(
+            {'index': {'_index': 'test_aioes', '_type': 'test_aioes', '_id': 100}},
+            {'name': 'Karl 1', 'email': 'karl@example.com'}),
+            ({'index': {'_index': 'test_aioes', '_type': 'test_aioes','_id': 101}},
+             {'name': 'Karl 2', 'email': 'karl@example.com'})]
+
+    done, fail = await _retry_handler(es,
+                                      mock_data(),
+                                      max_retries=1,
+                                      initial_backoff=2,
+                                      max_backoff=600)
+    assert done == 2
+    assert fail == []
