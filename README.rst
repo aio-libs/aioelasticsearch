@@ -98,8 +98,7 @@ Asynchronous `bulk <https://www.elastic.co/guide/en/elasticsearch/reference/6.2/
     async def go():
         async with Elasticsearch() as es:
             success, fails = \
-                await bulk(es, gen_data(),
-                           concurrency_limit=10)
+                await bulk(es, gen_data())
 
 
     loop = asyncio.get_event_loop()
