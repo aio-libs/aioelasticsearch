@@ -179,8 +179,7 @@ async def _retry_handler(client, coroutine, max_retries, initial_backoff,
 
         if attempt:
             sleep = min(max_backoff, initial_backoff * 2 ** (attempt - 1))
-            print(f"Retry {attempt}, sleep {sleep}")
-            logger.debug(f"Retry {attempt}, sleep {sleep}")
+            logger.debug('Retry %d count, sleep %d second.', attempt, sleep)
             await asyncio.sleep(sleep, loop=client.loop)
 
         result = await coroutine
@@ -192,8 +191,7 @@ async def _retry_handler(client, coroutine, max_retries, initial_backoff,
         bulk_data = result[1]
 
         for tuple_data in bulk_data:
-
-            data = action = None
+            data = None
             if len(tuple_data) == 2:
                 data = tuple_data[1]
             action = tuple_data[0]
@@ -238,6 +236,7 @@ async def bulk(client, actions, chunk_size=500, max_retries=0,
                                             initial_backoff,
                                             max_backoff,
                                             **kwargs)
+
         finish_count += count
         if stats_only:
             fail_datas += len(fails)
