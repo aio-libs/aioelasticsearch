@@ -32,7 +32,7 @@ setup(
         'elasticsearch>=6.0.0,<7.0.0',
         'aiohttp>=2.3.7,<4.0.0',
     ],
-    python_requires='>=3.5.0',
+    python_requires='>=3.5.3',
     packages=['aioelasticsearch'],
     include_package_data=True,
     zip_safe=False,
