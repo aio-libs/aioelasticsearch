@@ -12,6 +12,14 @@ async def test_ping(es):
     assert ping
 
 
+@pytest.mark.run_loop
+@asyncio.coroutine
+def test_ping2(es):
+    ping = yield from es.ping()
+
+    assert ping
+
+
 def test_elastic_default_loop(auto_close, loop):
     asyncio.set_event_loop(loop)
 
