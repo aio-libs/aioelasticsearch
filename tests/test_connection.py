@@ -76,7 +76,10 @@ async def test_perform_request_ssl_error(auto_close, loop):
     ]:
         session = aiohttp.ClientSession(loop=loop)
 
-        session._request = make_mocked_coro(raise_exception=exc)
+        async def coro(*args, **Kwargs):
+            raise exc
+
+        session._request = coro
 
         conn = auto_close(AIOHttpConnection(session=session, loop=loop,
                                             use_ssl=True))
