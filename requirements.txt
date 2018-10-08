@@ -1,11 +1,11 @@
-aiohttp==2.3.10
+aiohttp==3.4.4
 flake8==3.5.0
-ipdb==0.10.3
-ipython==6.2.1
-pytest==3.4.0
-pytest-cov==2.5.1
-pytest-mock==1.6.3
-tox==2.9.1
-docker==3.0.1
-isort==4.3.3
+ipdb==0.11
+ipython==7.0.1
+pytest==3.8.2
+pytest-cov==2.6.0
+pytest-mock==1.10.0
+tox==3.5.0
+docker==3.4.1
+isort==4.3.4
 -e .
