@@ -1,6 +1,6 @@
 aiohttp==3.4.4
 attrs==18.2.0
-flake8==3.5.0
+flake8==3.6.0
 ipdb==0.10.3
 ipython==6.2.1
 pytest==3.4.0
