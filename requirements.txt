@@ -7,6 +7,6 @@ pytest==4.0.1
 pytest-cov==2.6.0
 pytest-mock==1.10.0
 tox==3.5.3
-docker==3.5.1
+docker==3.6.0
 isort==4.3.4
 -e .
