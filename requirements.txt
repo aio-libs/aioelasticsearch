@@ -1,12 +1,12 @@
-aiohttp==3.5.1
+aiohttp==3.5.4
 attrs==18.2.0
-flake8==3.6.0
+flake8==3.7.4
 ipdb==0.11
 ipython==7.2.0
-pytest==4.1.0
+pytest==4.2.0
 pytest-cov==2.6.1
 pytest-mock==1.10.0
-tox==3.6.1
-docker==3.6.0
+tox==3.7.0
+docker==3.7.0
 isort==4.3.4
 -e .
