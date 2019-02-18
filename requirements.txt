@@ -3,7 +3,7 @@ attrs==18.2.0
 flake8==3.7.5
 ipdb==0.11
 ipython==7.2.0
-pytest==4.2.0
+pytest==4.2.1
 pytest-cov==2.6.1
 pytest-mock==1.10.0
 tox==3.7.0
