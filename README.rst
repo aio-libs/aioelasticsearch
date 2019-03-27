@@ -68,6 +68,45 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
     loop.run_until_complete(go())
     loop.close()
 
+Asynchronous `bulk <https://www.elastic.co/guide/en/elasticsearch/reference/6.2/docs-bulk.html>`_
+
+.. code-block:: python
+
+    import asyncio
+
+    from aioelasticsearch import Elasticsearch
+    from aioelasticsearch.helpers import bulk
+
+    def gen_data():
+        for i in range(10):
+            yield { "_index" : "test",
+                    "_type" : "_doc",
+                    "_id" : str(i),
+                    "FIELD1": "TEXT",
+                    }
+    def gen_data2():
+        for i in range(10):
+                yield { "_index" : "test",
+                        "_type" : "_doc",
+                        "_id" : str(i),
+                        "_source":{
+                            "FIELD1": "TEXT",
+                            }
+                        }
+
+
+    async def go():
+        async with Elasticsearch() as es:
+            success, fails = \
+                await bulk(es, gen_data())
+
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(go())
+    loop.close()
+
+
+
 Thanks
 ------
 
