@@ -1,8 +1,7 @@
 import pytest
 
-from aioelasticsearch import (Elasticsearch, ConnectionError,
-                              ConnectionTimeout, AIOHttpTransport,
-                              TransportError)
+from aioelasticsearch import (AIOHttpTransport, ConnectionError,
+                              ConnectionTimeout, Elasticsearch, TransportError)
 from aioelasticsearch.connection import AIOHttpConnection
 
 

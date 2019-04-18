@@ -4,12 +4,10 @@ from unittest import mock
 
 import aiohttp
 import pytest
-from aiohttp.test_utils import make_mocked_coro
 from elasticsearch import ConnectionTimeout
 
-from aioelasticsearch.connection import (
-    AIOHttpConnection, ConnectionError, SSLError,
-)
+from aioelasticsearch.connection import (AIOHttpConnection, ConnectionError,
+                                         SSLError)
 
 
 @pytest.mark.run_loop
