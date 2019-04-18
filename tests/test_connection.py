@@ -1,4 +1,5 @@
 import asyncio
+import ssl
 from unittest import mock
 
 import aiohttp
@@ -29,6 +30,15 @@ async def test_custom_headers(auto_close, loop):
 async def test_auth_no_auth(auto_close, loop):
     conn = auto_close(AIOHttpConnection(loop=loop))
     assert conn.http_auth is None
+
+
+@pytest.mark.run_loop
+async def test_ssl_context(auto_close, loop):
+    context = ssl.create_default_context()
+    conn = auto_close(
+        AIOHttpConnection(loop=loop, verify_certs=True, ssl_context=context)
+    )
+    assert conn.session.connector._ssl is context
 
 
 @pytest.mark.run_loop
