@@ -252,6 +252,11 @@ class AIOHttpTransport(Transport):
             connection = await self.get_connection()
 
             try:
+                # add a delay before attempting the next retry
+                # 0, 1, 3, 7, etc...
+                delay = 2**(attempt - 1) - 1
+                if delay:
+                    await asyncio.sleep(delay, loop=self.loop)
 
                 status, headers, data = await connection.perform_request(
                     method, url, params, body,
