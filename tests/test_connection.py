@@ -93,13 +93,3 @@ async def test_perform_request_ssl_error(auto_close, loop):
                                             use_ssl=True))
         with pytest.raises(expected):
             await conn.perform_request('HEAD', '/')
-
-
-@pytest.mark.run_loop
-async def test_http_decompression(auto_close, loop):
-    session = aiohttp.ClientSession(loop=loop, auto_decompress=False)
-    conn = AIOHttpConnection(session=session, loop=loop)
-    with pytest.raises(UnicodeDecodeError) as excinfo:
-        await conn.perform_request("GET", "_search")
-    assert str(excinfo.value).startswith("'utf-8' codec can't decode byte")
-    auto_close(conn)
