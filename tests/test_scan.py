@@ -32,8 +32,9 @@ def test_scan_scroll_id_without_context_manager(es):
         scan.scroll_id
 
 
+@pytest.mark.skip_after_es7
 @pytest.mark.run_loop
-async def test_scan_simple(es, populate):
+async def test_scan_simple_before_es7(es, populate):
     index = 'test_aioes'
     doc_type = 'type_2'
     scroll_size = 3
@@ -63,8 +64,74 @@ async def test_scan_simple(es, populate):
     assert ids == {str(i) for i in range(10)}
 
 
+@pytest.mark.skip_before_es7
 @pytest.mark.run_loop
-async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
+async def test_scan_simple_after_es7(es, populate):
+    index = 'test_aioes'
+    scroll_size = 3
+    n = 10
+
+    body = {'foo': 1}
+    await populate(index, None, n, body)
+    ids = set()
+
+    async with Scan(
+        es,
+        index=index,
+        size=scroll_size,
+    ) as scan:
+        assert isinstance(scan.scroll_id, str)
+        assert scan.total == {'relation': 'eq', 'value': 10}
+        async for doc in scan:
+            ids.add(doc['_id'])
+            assert doc == {'_id': mock.ANY,
+                           '_index': 'test_aioes',
+                           '_score': None,
+                           '_source': {'foo': 1},
+                           '_type': '_doc',
+                           'sort': mock.ANY}
+
+    assert ids == {str(i) for i in range(10)}
+
+
+@pytest.mark.skip_before_es7
+@pytest.mark.run_loop
+async def test_scan_equal_chunks_for_loop_after_es7(es, es_clean, populate):
+    for n, scroll_size in [
+        (0, 1),  # no results
+        (6, 6),  # 1 scroll
+        (6, 8),  # 1 scroll
+        (6, 3),  # 2 scrolls
+        (6, 4),  # 2 scrolls
+        (6, 2),  # 3 scrolls
+        (6, 1),  # 6 scrolls
+    ]:
+        es_clean()
+
+        index = 'test_aioes'
+        doc_type = 'type_1'
+        body = {'foo': 1}
+
+        await populate(index, doc_type, n, body)
+
+        ids = set()
+
+        async with Scan(
+            es,
+            index=index,
+            size=scroll_size,
+        ) as scan:
+
+            async for doc in scan:
+                ids.add(doc['_id'])
+
+            # check number of unique doc ids
+            assert len(ids) == n == scan.total['value']
+
+
+@pytest.mark.skip_after_es7
+@pytest.mark.run_loop
+async def test_scan_equal_chunks_for_loop_before_es7(es, es_clean, populate):
     for n, scroll_size in [
         (0, 1),  # no results
         (6, 6),  # 1 scroll
@@ -98,6 +165,27 @@ async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
             assert len(ids) == n == scan.total
 
 
+@pytest.mark.skip_before_es7
+@pytest.mark.run_loop
+async def test_scan_no_mask_index(es):
+    index = 'undefined-*'
+    doc_type = 'any'
+    scroll_size = 3
+
+    async with Scan(
+        es,
+        index=index,
+        size=scroll_size,
+    ) as scan:
+        assert scan.scroll_id is None
+        assert scan.total == {'relation': 'eq', 'value': 0}
+        cnt = 0
+        async for doc in scan:  # noqa
+            cnt += 1
+        assert cnt == 0
+
+
+@pytest.mark.skip_after_es7
 @pytest.mark.run_loop
 async def test_scan_no_mask_index(es):
     index = 'undefined-*'
@@ -141,16 +229,20 @@ async def test_scan_no_scroll(es, loop, populate):
 
 
 @pytest.mark.run_loop
-async def test_scan_no_index(es):
+async def test_scan_no_index(es, es_major_version):
     index = 'undefined'
     doc_type = 'any'
     scroll_size = 3
 
+    scan_kwargs = {}
+    if es_major_version < 7:
+        scan_kwargs['doc_type'] = doc_type
+
     async with Scan(
         es,
         index=index,
-        doc_type=doc_type,
         size=scroll_size,
+        **scan_kwargs,
     ) as scan:
         assert scan.scroll_id is None
         assert scan.total == 0
@@ -161,11 +253,15 @@ async def test_scan_no_index(es):
 
 
 @pytest.mark.run_loop
-async def test_scan_warning_on_failed_shards(es, populate, mocker):
+async def test_scan_warning_on_failed_shards(es, populate, mocker, es_major_version):
     index = 'test_aioes'
     doc_type = 'type_2'
     scroll_size = 3
     n = 10
+
+    scan_kwargs = {}
+    if es_major_version < 7:
+        scan_kwargs['doc_type'] = doc_type
 
     body = {'foo': 1}
     await populate(index, doc_type, n, body)
@@ -175,9 +271,9 @@ async def test_scan_warning_on_failed_shards(es, populate, mocker):
     async with Scan(
         es,
         index=index,
-        doc_type=doc_type,
         size=scroll_size,
         raise_on_error=False,
+        **scan_kwargs,
     ) as scan:
         i = 0
         async for doc in scan:  # noqa
@@ -192,11 +288,15 @@ async def test_scan_warning_on_failed_shards(es, populate, mocker):
 
 
 @pytest.mark.run_loop
-async def test_scan_exception_on_failed_shards(es, populate, mocker):
+async def test_scan_exception_on_failed_shards(es, populate, mocker, es_major_version):
     index = 'test_aioes'
     doc_type = 'type_2'
     scroll_size = 3
     n = 10
+
+    scan_kwargs = {}
+    if es_major_version < 7:
+        scan_kwargs['doc_type'] = doc_type
 
     body = {'foo': 1}
     await populate(index, doc_type, n, body)
@@ -207,8 +307,8 @@ async def test_scan_exception_on_failed_shards(es, populate, mocker):
     async with Scan(
         es,
         index=index,
-        doc_type=doc_type,
         size=scroll_size,
+        **scan_kwargs,
     ) as scan:
         with pytest.raises(ScanError) as cm:
             async for doc in scan:  # noqa

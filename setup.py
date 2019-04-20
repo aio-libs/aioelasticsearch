@@ -29,9 +29,12 @@ setup(
     description='elasticsearch-py wrapper for asyncio',
     long_description=read('README.rst'),
     install_requires=[
-        'elasticsearch>=6.0.0,<7.0.0',
         'aiohttp>=3.5.0,<4.0.0',
     ],
+    extras_require={
+        '6': ['elasticsearch>=6.0.0,<7.0.0'],
+        '7': ['elasticsearch>=7.0.0,<8.0.0'],
+    },
     python_requires='>=3.5.3',
     packages=['aioelasticsearch'],
     include_package_data=True,
