@@ -87,9 +87,9 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
 Running the tests
 -----------------
 
-Pytest
+Pytests
 
-.. code-block:: shell
+.. code-block:: python
   python -m pytest 
 
 For TOX tests with different python install different python form *tox.ini* and enter *tox* in project directory.
