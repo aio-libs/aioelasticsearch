@@ -1,11 +1,7 @@
-import asyncio
-
 import logging
 
 from aioelasticsearch import NotFoundError
 from elasticsearch.helpers import ScanError
-
-from .compat import PY_352
 
 
 __all__ = ('Scan', 'ScanError')
@@ -64,9 +60,6 @@ class Scan:
             raise RuntimeError("Scan operations should be done "
                                "inside async context manager")
         return self
-
-    if not PY_352:
-        __aiter__ = asyncio.coroutine(__aiter__)
 
     async def __anext__(self):  # noqa
         if self._done:
