@@ -28,7 +28,7 @@ Run it with docker (Linux/MAC):
 
     docker run -p 9200:9200 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.0.0
     
-read more in `scroll <./DEV_SETUP.rst>`_
+read more in `dev config <./DEV_SETUP.rst>`_
 
 Installation
 ------------
