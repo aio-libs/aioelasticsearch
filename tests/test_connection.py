@@ -1,4 +1,5 @@
 import asyncio
+import json
 import ssl
 from unittest import mock
 
@@ -93,3 +94,16 @@ async def test_perform_request_ssl_error(auto_close, loop):
                                             use_ssl=True))
         with pytest.raises(expected):
             await conn.perform_request('HEAD', '/')
+
+
+@pytest.mark.run_loop
+async def test_http_compressed_send(auto_close, loop):
+    conn = AIOHttpConnection(loop=loop, http_compress=True)
+    status, headers, body = await conn.perform_request(
+        'POST',
+        'test/test/1',
+        body=json.dumps({'test': 1}).encode('utf-8')
+    )
+    assert status == 200
+    assert json.loads(body).get('_index') == 'test'
+    auto_close(conn)
