@@ -20,7 +20,7 @@ Aioelasticsearch - is an asynchronous elasticsearch python client wrapper.
 Prerequisites
 ------------
 
-You can run Elasticsearch locally or in a docker.
+Running Elasticsearch server is required.
 
 Run it with docker:
 
