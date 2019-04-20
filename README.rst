@@ -15,7 +15,7 @@ aioelasticsearch
 Getting Started
 ------------
 
-Aioelasticsearch - the asynchronous python client wrap for elasticsearch, the client needs to be connected to the elasticsearch server.
+Aioelasticsearch - is an asynchronous elasticsearch python client wrapper.
 
 Prerequisites
 ------------
