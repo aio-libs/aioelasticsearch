@@ -87,7 +87,7 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
 Running the tests
 -----------------
 
-Enter *pytest* or *tox* in project directory for run tests.
+Enter *pytest* and *tox* in project directory for run tests.
 
 Thanks
 ------
