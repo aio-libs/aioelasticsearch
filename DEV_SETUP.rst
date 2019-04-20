@@ -88,7 +88,6 @@ The main steps:
 
         pytest --local-docker
 
-    | Note: the first time you will have to wait while docker downloads the ElasticSearch image (~600 MB).
-    | This may take some time (usually up to 5 minutes).
-    | All further test runs will take less time (usually up to 3 minutes).
+.. note::
+   The first time you will have to wait while docker downloads the ElasticSearch image (~600 MB). This may take some time (usually up to 5 minutes). All further test runs will take less time (usually up to 3 minutes).
 
