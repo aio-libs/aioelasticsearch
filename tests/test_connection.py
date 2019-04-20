@@ -103,9 +103,3 @@ async def test_http_decompression(auto_close, loop):
         await conn.perform_request("GET", "_search")
     assert str(excinfo.value).startswith("'utf-8' codec can't decode byte")
     auto_close(conn)
-
-
-@pytest.mark.run_loop
-async def test_http_compression_headers(auto_close, loop):
-        conn = auto_close(AIOHttpConnection(loop=loop, http_compress=True))
-        assert conn.headers['Content-Encoding'] == 'gzip'

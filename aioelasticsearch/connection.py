@@ -1,5 +1,4 @@
 import asyncio
-import gzip
 
 import aiohttp
 
@@ -38,8 +37,6 @@ class AIOHttpConnection(Connection):
         self.headers.setdefault('Content-Type', 'application/json')
 
         self.http_compress = http_compress
-        if self.http_compress:
-            self.headers.setdefault('Content-Encoding', 'gzip')
 
         self.loop = loop
 
@@ -99,8 +96,6 @@ class AIOHttpConnection(Connection):
         url = (self.base_url / url.lstrip('/')).with_query(params)
 
         start = self.loop.time()
-        # if self.http_compress and body:
-        #     body = gzip.compress(body)
         try:
             async with self.session.request(
                     method,
