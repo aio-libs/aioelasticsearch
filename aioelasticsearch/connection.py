@@ -95,16 +95,15 @@ class AIOHttpConnection(Connection):
 
         start = self.loop.time()
         try:
-            response = await self.session.request(
-                method,
-                url,
-                data=body,
-                headers=self._build_headers(headers),
-                timeout=timeout or self.timeout,
-            )
-            raw_data = await response.text()
+            async with self.session.request(
+                    method,
+                    url,
+                    data=body,
+                    headers=self._build_headers(headers),
+                    timeout=timeout or self.timeout) as response:
+                raw_data = await response.text()
 
-            duration = self.loop.time() - start
+                duration = self.loop.time() - start
 
         except aiohttp.ClientSSLError as exc:
             self.log_request_fail(
