@@ -1,4 +1,5 @@
 import asyncio
+import gzip
 from distutils.version import StrictVersion
 
 import aiohttp
@@ -21,16 +22,25 @@ class AIOHttpConnection(Connection):
         verify_certs=False,
         maxsize=10,
         headers=None,
+        http_compress=False,
         *,
         loop,
         **kwargs
     ):
-        super().__init__(host=host, port=port, use_ssl=use_ssl, **kwargs)
+        super().__init__(host=host,
+                         port=port,
+                         use_ssl=use_ssl,
+                         http_compress=http_compress,
+                         **kwargs)
 
         if headers is None:
             headers = {}
         self.headers = headers
         self.headers.setdefault('Content-Type', 'application/json')
+
+        self.http_compress = http_compress
+        if self.http_compress:
+            self.headers.setdefault('Content-Encoding', 'gzip')
 
         self.loop = loop
 
@@ -94,6 +104,8 @@ class AIOHttpConnection(Connection):
         url = (self.base_url / url.lstrip('/')).with_query(params)
 
         start = self.loop.time()
+        if self.http_compress and body:
+            body = gzip.compress(body)
         try:
             response = await self.session.request(
                 method,
@@ -101,6 +113,7 @@ class AIOHttpConnection(Connection):
                 data=body,
                 headers=self._build_headers(headers),
                 timeout=timeout or self.timeout,
+                compress=self.http_compress
             )
             raw_data = await response.text()
 
