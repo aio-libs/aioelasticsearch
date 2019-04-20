@@ -65,7 +65,7 @@ class AIOHttpConnection(Connection):
                 if not self.verify_certs:
                     kwargs['ssl'] = False
                 else:
-                    ssl = ssl_context
+                    kwargs['ssl'] = ssl_context
             self.session = aiohttp.ClientSession(
                 auth=self.http_auth,
                 connector=aiohttp.TCPConnector(
