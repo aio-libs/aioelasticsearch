@@ -13,12 +13,12 @@ aioelasticsearch
   :target: https://codecov.io/gh/aio-libs/aioelasticsearch
 
 Getting Started
-------------
+---------------
 
 Aioelasticsearch - is an asynchronous elasticsearch python client wrapper.
 
 Prerequisites
-------------
+-------------
 
 Running Elasticsearch server is required.
 
