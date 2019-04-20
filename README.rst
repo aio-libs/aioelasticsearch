@@ -90,7 +90,8 @@ Running the tests
 Pytests
 
 .. code-block:: python
-  python -m pytest 
+
+    python -m pytest 
 
 For TOX tests with different python install different python form *tox.ini* and enter *tox* in project directory.
 
