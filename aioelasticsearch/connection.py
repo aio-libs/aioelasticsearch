@@ -99,8 +99,8 @@ class AIOHttpConnection(Connection):
         url = (self.base_url / url.lstrip('/')).with_query(params)
 
         start = self.loop.time()
-        if self.http_compress and body:
-            body = gzip.compress(body)
+        # if self.http_compress and body:
+        #     body = gzip.compress(body)
         try:
             async with self.session.request(
                     method,
