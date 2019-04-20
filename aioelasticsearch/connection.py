@@ -75,7 +75,7 @@ class AIOHttpConnection(Connection):
                 if not self.verify_certs:
                     kwargs['ssl'] = False
                 else:
-                    ssl = ssl_context
+                    kwargs['ssl'] = ssl_context
             self.session = aiohttp.ClientSession(
                 auth=self.http_auth,
                 connector=aiohttp.TCPConnector(
@@ -107,17 +107,16 @@ class AIOHttpConnection(Connection):
         if self.http_compress and body:
             body = gzip.compress(body)
         try:
-            response = await self.session.request(
-                method,
-                url,
-                data=body,
-                headers=self._build_headers(headers),
-                timeout=timeout or self.timeout,
-                compress=self.http_compress
-            )
-            raw_data = await response.text()
+            async with self.session.request(
+                    method,
+                    url,
+                    data=body,
+                    headers=self._build_headers(headers),
+                    compress=self.http_compress,
+                    timeout=timeout or self.timeout) as response:
+                raw_data = await response.text()
 
-            duration = self.loop.time() - start
+                duration = self.loop.time() - start
 
         except aiohttp.ClientSSLError as exc:
             self.log_request_fail(
