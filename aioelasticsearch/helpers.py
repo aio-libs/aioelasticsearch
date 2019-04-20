@@ -1,8 +1,8 @@
 import logging
 
-from aioelasticsearch import NotFoundError
 from elasticsearch.helpers import ScanError
 
+from aioelasticsearch import NotFoundError
 
 __all__ = ('Scan', 'ScanError')
 

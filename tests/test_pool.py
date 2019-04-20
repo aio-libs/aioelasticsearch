@@ -1,9 +1,7 @@
 import pytest
 
-
-from aioelasticsearch import (Elasticsearch, AIOHttpConnectionPool,
+from aioelasticsearch import (AIOHttpConnectionPool, Elasticsearch,
                               ImproperlyConfigured)
-
 from aioelasticsearch.pool import DummyConnectionPool
 
 
