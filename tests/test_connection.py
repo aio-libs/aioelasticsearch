@@ -85,3 +85,22 @@ async def test_perform_request_ssl_error(auto_close, loop):
                                             use_ssl=True))
         with pytest.raises(expected):
             await conn.perform_request('HEAD', '/')
+
+
+@pytest.mark.run_loop
+async def test_priority_queue_same_timestamp(auto_close, loop):
+    conn = auto_close(AIOHttpConnection(http_auth='user:pass', loop=loop))
+    conn2 = auto_close(AIOHttpConnection(http_auth='user:pass', loop=loop))
+    queue = asyncio.PriorityQueue(10, loop=loop)
+    time = loop.time()
+
+    # not raising error if both AIOHttpConnectionPool
+    queue.put_nowait(
+        (time, conn)
+    )
+    queue.put_nowait(
+        (time, conn2)
+    )
+
+    with pytest.raises(TypeError):
+        queue.put_nowait((time, object()))
