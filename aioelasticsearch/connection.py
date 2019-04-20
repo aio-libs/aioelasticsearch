@@ -1,6 +1,5 @@
 import asyncio
 import gzip
-from distutils.version import StrictVersion
 
 import aiohttp
 
@@ -68,14 +67,10 @@ class AIOHttpConnection(Connection):
         self.session = kwargs.get('session')
         if self.session is None:
             kwargs = {}
-            if StrictVersion(aiohttp.__version__).version < (3, 0):
-                kwargs['ssl_context'] = ssl_context
-                kwargs['verify_ssl'] = self.verify_certs
+            if not self.verify_certs:
+                kwargs['ssl'] = False
             else:
-                if not self.verify_certs:
-                    kwargs['ssl'] = False
-                else:
-                    kwargs['ssl'] = ssl_context
+                kwargs['ssl'] = ssl_context
             self.session = aiohttp.ClientSession(
                 auth=self.http_auth,
                 connector=aiohttp.TCPConnector(
