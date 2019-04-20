@@ -1,12 +1,11 @@
 import asyncio
-
 import logging
 
-from aioelasticsearch import NotFoundError
 from elasticsearch.helpers import ScanError
 
-from .compat import PY_352
+from aioelasticsearch import NotFoundError
 
+from .compat import PY_352
 
 __all__ = ('Scan', 'ScanError')
 

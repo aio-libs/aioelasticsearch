@@ -1,12 +1,10 @@
 import logging
-
 from unittest import mock
 
 import pytest
 
 from aioelasticsearch import NotFoundError
 from aioelasticsearch.helpers import Scan, ScanError
-
 
 logger = logging.getLogger('elasticsearch')
 
@@ -94,7 +92,7 @@ async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
         ) as scan:
 
             async for doc in scan:
-                    ids.add(doc['_id'])
+                ids.add(doc['_id'])
 
             # check number of unique doc ids
             assert len(ids) == n == scan.total
