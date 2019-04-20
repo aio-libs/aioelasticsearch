@@ -100,7 +100,7 @@ async def test_http_decompression(auto_close, loop):
     session = aiohttp.ClientSession(loop=loop, auto_decompress=False)
     conn = AIOHttpConnection(session=session, loop=loop)
     with pytest.raises(UnicodeDecodeError) as excinfo:
-        await conn.perform_request("GET", "_index")
+        await conn.perform_request("GET", "_search")
     assert str(excinfo.value).startswith("'utf-8' codec can't decode byte")
     auto_close(conn)
 
