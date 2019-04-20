@@ -1,29 +1,37 @@
+conditions: v1
+
+dist: xenial
 language: python
-sudo: false
-services:
-  - docker
 python:
   - "3.5"
   - "3.6"
+  - "3.7"
 install:
-  - pip install codecov
-  - pip install -r requirements.txt
+  - pip install -U tox
 script:
-  - pytest tests --es_tag 6.0.0
-  - PYTHONASYNCIODEBUG=x pytest tests --es_tag 6.0.0
+  - tox -- --es_tag=${ES_TAG}
 after_success:
-  - codecov
+  - tox -e coverage
 cache: pip
-notifications:
-  email: false
+env:
+  TOXENV: py
+  ES_TAG: 6.0.0
 
-deploy:
-  provider: pypi
-  user: andrew.svetlov
-  password:
-    secure: "IbyeWME6qs6fGiGxTIefaLcGfMi7Em/r4bHOTETFHrXf7fIUzqV6JMlg0xE2BOcapfjgzwqUL2eIOKV814scMRijIdoBSYWORzAgaojh1wLGMdpsVLEl+QfbAfTEQTWWypKZ3CgeVGSnQGvdpGGQWbG9kAv0ejbyBvc/8sCondlmLIpLEs68Z1EyIF4Lmp2q2HVAsPOKVKxyaBNP75Fe0c1D/ARem6mT046xKZ5Cz/ksamqT1XzQYz62X+hg7XZr8l2GKvyI+edeaXJei4AKlzdPixLo8eFxoxuesqRLLtUwwNKAG8Bfs9hkN2KexL4hEO/YaNvqSNXXXbBjBOijmQu+SzVCzwag5YvycBLDS35aYeG+S/IIAshHlDcmaknf5NOldt2GS52Xdo/MYrAaiz5RdfBLW347hc9FqS9bwB+Wf5+I5nvxLUlVoZT2pmMi0zm21VSkFtSGrNJTPyI5s/gfn9X7U3uRIeLdBJIgFLs5GDIlJe1dkK81DYJAb6kYO27Pzr2vbZGHk8a0OL0TxvvWlnt7S4EciQlgNjrBtGjTsTy8Jd/W/B/vmmdaaDHBfKsJTZi/amqsDSneZ5Ee7DqyLEqXiWrRIU+Ibx8t3ChM48wqOsgdmIrL5rylVigKrxyRGSM1jknbE9iUrq1GgZXq8x76ncID00QnWJPYA+w="
-  distributions: "sdist bdist_wheel"
-  on:
-    tags: true
-    all_branches: true
-    python: 3.5
+jobs:
+  fast_finish: true
+  include:
+  - stage: Deploy to PYPI
+    if: tag IS present
+    install: skip
+    script: skip
+    after_success: []
+    deploy:
+      provider: pypi
+      user: aio-libs-bot
+      password:
+        secure: "cKvNQXCPwKAZHB02Me462NOyd4za1r5TJYUgCvrAkJTSf6qHdlLnOvH1bZtDyfs2GEpvYlx8nNZJHkbVHSiz3UEkaiuLj6xfaJdVUpJ9qK5w4YQvrMeb4cD6amIvMttrgMoppGq4GSjdcggBIwNcmgk2g5PrpozheK2GWkA1B8rlsnud4JRPhenzchH5yvv1VBXokVFvv6SyS+EIL8DEKRCZQ/Bug3N5QVPXWQn52JINY0c6v0UgLJzc0F82VCJKYdKkVBXLFGakwHlufjcn5TB9myia5hBeObdyXlJGk+NiGrZGchluAfE+QWfdtTn9AAyUHdNV7jjQWQtfv5gj025Zo2IXNRvHkeIG6CiHyZ3YiXorA20kZgaHd95PG+WkJwbRUBJdCgrZ1r+saxrA8D7tT3aljEwc10jz/YcQdazQmFXqV2NP0PDAiqNS0zgIPPZQn2lo+KUBpiUA+h/Wp/Jv3XlmhyyvAeCfGVMDdBRhIq5SDHdaqVJ+UbGR79qKcA9/bKYimyZ83MRUBUsZPMh/VElLKImN3LqjCjsoEeFCeh5pZvEmrydNRv4aeE124nnYX0DY6Md6+NN6wjnBagg+Ws4cR0UzsQrO35L/JECEEklHQv+nGn4sTmMoHwf9IR0XeNwol3dnY/3HVuipgNcFN84Ir7F4gcUtshJu0Vo="
+      distributions: sdist bdist_wheel
+      on:
+        tags: true
+        all_branches: true
+        python: "3.7"
