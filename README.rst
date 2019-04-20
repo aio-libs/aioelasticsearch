@@ -22,7 +22,7 @@ Prerequisites
 
 Running Elasticsearch server is required.
 
-Run it with docker:
+Run it with docker (Linux/MAC):
 
 .. code-block:: shell
 
