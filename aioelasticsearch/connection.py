@@ -55,6 +55,7 @@ class AIOHttpConnection(Connection):
                                   path=self.url_prefix)
 
         self.session = kwargs.get('session')
+        self.close_session = False
         if self.session is None:
             kwargs = {}
             if not self.verify_certs:
@@ -70,9 +71,11 @@ class AIOHttpConnection(Connection):
                     **kwargs,
                 ),
             )
+            self.close_session = True
 
     async def close(self):
-        await self.session.close()
+        if self.close_session:
+            await self.session.close()
 
     async def perform_request(
         self,
