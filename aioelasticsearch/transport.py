@@ -278,10 +278,11 @@ class AIOHttpTransport(Transport):
                     raise
 
             else:
+                self.connection_pool.mark_live(connection)
+
                 if method == 'HEAD':
                     return 200 <= status < 300
 
-                self.connection_pool.mark_live(connection)
                 if data:
                     data = self.deserializer.loads(
                         data, headers.get('content-type'),

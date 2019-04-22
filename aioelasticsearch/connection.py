@@ -55,6 +55,7 @@ class AIOHttpConnection(Connection):
                                   path=self.url_prefix)
 
         self.session = kwargs.get('session')
+        self.close_session = False
         if self.session is None:
             kwargs = {}
             if not self.verify_certs:
@@ -70,9 +71,11 @@ class AIOHttpConnection(Connection):
                     **kwargs,
                 ),
             )
+            self.close_session = True
 
     async def close(self):
-        await self.session.close()
+        if self.close_session:
+            await self.session.close()
 
     async def perform_request(
         self,
@@ -90,16 +93,15 @@ class AIOHttpConnection(Connection):
 
         start = self.loop.time()
         try:
-            response = await self.session.request(
-                method,
-                url,
-                data=body,
-                headers=self._build_headers(headers),
-                timeout=timeout or self.timeout,
-            )
-            raw_data = await response.text()
+            async with self.session.request(
+                    method,
+                    url,
+                    data=body,
+                    headers=self._build_headers(headers),
+                    timeout=timeout or self.timeout) as response:
+                raw_data = await response.text()
 
-            duration = self.loop.time() - start
+                duration = self.loop.time() - start
 
         except aiohttp.ClientSSLError as exc:
             self.log_request_fail(
