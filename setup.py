@@ -25,12 +25,12 @@ setup(
     version=get_version(),
     author='wikibusiness',
     author_email='osf@wikibusiness.org',
-    url='https://github.com/wikibusiness/aioelasticsearch',
+    url='https://github.com/aio-libs/aioelasticsearch',
     description='elasticsearch-py wrapper for asyncio',
     long_description=read('README.rst'),
     install_requires=[
         'elasticsearch>=6.0.0,<7.0.0',
-        'aiohttp>=2.3.7,<4.0.0',
+        'aiohttp>=3.5.0,<4.0.0',
     ],
     python_requires='>=3.5.3',
     packages=['aioelasticsearch'],
@@ -47,6 +47,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     keywords=['elasticsearch', 'asyncio', 'aiohttp'],
 )

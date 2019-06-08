@@ -1,5 +1,4 @@
 import asyncio
-from distutils.version import StrictVersion
 
 import aiohttp
 
@@ -56,16 +55,13 @@ class AIOHttpConnection(Connection):
                                   path=self.url_prefix)
 
         self.session = kwargs.get('session')
+        self.close_session = False
         if self.session is None:
             kwargs = {}
-            if StrictVersion(aiohttp.__version__).version < (3, 0):
-                kwargs['ssl_context'] = ssl_context
-                kwargs['verify_ssl'] = self.verify_certs
+            if not self.verify_certs:
+                kwargs['ssl'] = False
             else:
-                if not self.verify_certs:
-                    kwargs['ssl'] = False
-                else:
-                    kwargs['ssl'] = ssl_context
+                kwargs['ssl'] = ssl_context
             self.session = aiohttp.ClientSession(
                 auth=self.http_auth,
                 connector=aiohttp.TCPConnector(
@@ -75,9 +71,11 @@ class AIOHttpConnection(Connection):
                     **kwargs,
                 ),
             )
+            self.close_session = True
 
     async def close(self):
-        await self.session.close()
+        if self.close_session:
+            await self.session.close()
 
     async def perform_request(
         self,
@@ -95,16 +93,15 @@ class AIOHttpConnection(Connection):
 
         start = self.loop.time()
         try:
-            response = await self.session.request(
-                method,
-                url,
-                data=body,
-                headers=self._build_headers(headers),
-                timeout=timeout or self.timeout,
-            )
-            raw_data = await response.text()
+            async with self.session.request(
+                    method,
+                    url,
+                    data=body,
+                    headers=self._build_headers(headers),
+                    timeout=timeout or self.timeout) as response:
+                raw_data = await response.text()
 
-            duration = self.loop.time() - start
+                duration = self.loop.time() - start
 
         except aiohttp.ClientSSLError as exc:
             self.log_request_fail(

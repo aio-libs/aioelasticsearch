@@ -74,6 +74,21 @@ async def test_explicit_session(auto_close, loop):
 
 
 @pytest.mark.run_loop
+async def test_explicit_session_not_closed(loop):
+    session = aiohttp.ClientSession(loop=loop)
+    conn = AIOHttpConnection(session=session, loop=loop)
+    await conn.close()
+    assert not conn.session.closed and not session.closed
+
+
+@pytest.mark.run_loop
+async def test_session_closed(loop):
+    conn = AIOHttpConnection(loop=loop)
+    await conn.close()
+    assert conn.session.closed
+
+
+@pytest.mark.run_loop
 async def test_perform_request_ssl_error(auto_close, loop):
     for exc, expected in [
         (aiohttp.ClientConnectorCertificateError(mock.Mock(), mock.Mock()), SSLError),  # noqa
