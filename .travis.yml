@@ -8,6 +8,7 @@ python:
   - "3.7"
 install:
   - pip install --upgrade pip
+  - pip install --upgrade setuptools
   - pip install -U tox
 script:
   - tox -- --es_tag=${ES_TAG}
