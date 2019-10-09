@@ -161,10 +161,49 @@ async def test_mark_dead_with_sniff(auto_close, loop, es_server):
     assert len(t.connection_pool.connections) == 1
 
 
+@pytest.mark.skip_before_es7
 @pytest.mark.run_loop
-async def test_send_get_body_as_post(es_server, auto_close, loop):
+async def test_send_get_body_as_post_after_es7(es_server, auto_close, loop):
     cl = auto_close(Elasticsearch([{'host': es_server['host'],
                                    'port': es_server['port']}],
+                                  send_get_body_as='POST',
+                                  http_auth=es_server['auth'],
+                                  loop=loop))
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
+    ret = await cl.mget(
+        {"docs": [
+                {"_id": "1"},
+                {"_id": "2"}
+        ]},
+        index='test', )
+    assert ret == {'docs': [{'_id': '1',
+                             '_index': 'test',
+                             '_source': {'val': '1'},
+
+                             '_version': 1,
+                             '_primary_term': 1,
+                             'found': True,
+                             '_seq_no': 0,
+                             '_type': '_doc',
+                             },
+                            {'_id': '2',
+                             '_index': 'test',
+                             '_source': {'val': '2'},
+
+                             '_version': 1,
+                             '_primary_term': 1,
+                             'found': True,
+                             '_seq_no': 1,
+                             '_type': '_doc',
+                             }]}
+
+
+@pytest.mark.skip_after_es7
+@pytest.mark.run_loop
+async def test_send_get_body_as_post_before_es7(es_server, auto_close, loop):
+    cl = auto_close(Elasticsearch([{'host': es_server['host'],
+                                    'port': es_server['port']}],
                                   send_get_body_as='POST',
                                   http_auth=es_server['auth'],
                                   loop=loop))
@@ -172,8 +211,8 @@ async def test_send_get_body_as_post(es_server, auto_close, loop):
     await cl.create('test', 'type', '2', {'val': '2'})
     ret = await cl.mget(
         {"docs": [
-                {"_id": "1"},
-                {"_id": "2"}
+            {"_id": "1"},
+            {"_id": "2"}
         ]},
         index='test', doc_type='type')
     assert ret == {'docs': [{'_id': '1',
@@ -190,8 +229,47 @@ async def test_send_get_body_as_post(es_server, auto_close, loop):
                              'found': True}]}
 
 
+@pytest.mark.skip_before_es7
 @pytest.mark.run_loop
-async def test_send_get_body_as_source(es_server, auto_close, loop):
+async def test_send_get_body_as_source_after_es7(es_server, auto_close, loop):
+    cl = auto_close(Elasticsearch([{'host': es_server['host'],
+                                   'port': es_server['port']}],
+                                  send_get_body_as='source',
+                                  http_auth=es_server['auth'],
+                                  loop=loop))
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
+    ret = await cl.mget(
+        {"docs": [
+                {"_id": "1"},
+                {"_id": "2"}
+        ]},
+        index='test', )
+    assert ret == {'docs': [{'_id': '1',
+                             '_index': 'test',
+                             '_source': {'val': '1'},
+
+                             '_version': 1,
+                             '_primary_term': 1,
+                             'found': True,
+                             '_seq_no': 0,
+                             '_type': '_doc',
+                             },
+                            {'_id': '2',
+                             '_index': 'test',
+                             '_source': {'val': '2'},
+
+                             '_version': 1,
+                             '_primary_term': 1,
+                             'found': True,
+                             '_seq_no': 1,
+                             '_type': '_doc',
+                             }]}
+
+
+@pytest.mark.skip_after_es7
+@pytest.mark.run_loop
+async def test_send_get_body_as_source_before_es7(es_server, auto_close, loop):
     cl = auto_close(Elasticsearch([{'host': es_server['host'],
                                    'port': es_server['port']}],
                                   send_get_body_as='source',
@@ -219,18 +297,57 @@ async def test_send_get_body_as_source(es_server, auto_close, loop):
                              'found': True}]}
 
 
+@pytest.mark.skip_before_es7
 @pytest.mark.run_loop
-async def test_send_get_body_as_get(es_server, auto_close, loop):
+async def test_send_get_body_as_get_after_es7(es_server, auto_close, loop):
     cl = auto_close(Elasticsearch([{'host': es_server['host'],
                                    'port': es_server['port']}],
+                                  http_auth=es_server['auth'],
+                                  loop=loop))
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
+    ret = await cl.mget(
+        {"docs": [
+                {"_id": "1"},
+                {"_id": "2"}
+        ]},
+        index='test', )
+    assert ret == {'docs': [{'_id': '1',
+                             '_index': 'test',
+                             '_source': {'val': '1'},
+
+                             '_version': 1,
+                             '_primary_term': 1,
+                             'found': True,
+                             '_seq_no': 0,
+                             '_type': '_doc',
+                             },
+                            {'_id': '2',
+                             '_index': 'test',
+                             '_source': {'val': '2'},
+
+
+                             '_version': 1,
+                             '_primary_term': 1,
+                             'found': True,
+                             '_seq_no': 1,
+                             '_type': '_doc',
+                             }]}
+
+
+@pytest.mark.skip_after_es7
+@pytest.mark.run_loop
+async def test_send_get_body_as_get_before_es7(es_server, auto_close, loop):
+    cl = auto_close(Elasticsearch([{'host': es_server['host'],
+                                    'port': es_server['port']}],
                                   http_auth=es_server['auth'],
                                   loop=loop))
     await cl.create('test', 'type', '1', {'val': '1'})
     await cl.create('test', 'type', '2', {'val': '2'})
     ret = await cl.mget(
         {"docs": [
-                {"_id": "1"},
-                {"_id": "2"}
+            {"_id": "1"},
+            {"_id": "2"}
         ]},
         index='test', doc_type='type')
     assert ret == {'docs': [{'_id': '1',
@@ -247,11 +364,51 @@ async def test_send_get_body_as_get(es_server, auto_close, loop):
                              'found': True}]}
 
 
+@pytest.mark.skip_before_es7
 @pytest.mark.run_loop
-async def test_send_get_body_as_source_none_params(es_server,
-                                                   auto_close, loop):
+async def test_send_get_body_as_source_none_params_after_es7(es_server,
+                                                             auto_close, loop):
     cl = auto_close(Elasticsearch([{'host': es_server['host'],
                                    'port': es_server['port']}],
+                                  send_get_body_as='source',
+                                  http_auth=es_server['auth'],
+                                  loop=loop))
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
+    ret = await cl.transport.perform_request(
+        'GET', 'test/_mget',
+        body={"docs": [
+            {"_id": "1"},
+            {"_id": "2"}
+        ]})
+    assert ret == {'docs': [{'_id': '1',
+                             '_index': 'test',
+                             '_source': {'val': '1'},
+
+                             '_version': 1,
+                             '_primary_term': 1,
+                             'found': True,
+                             '_seq_no': 0,
+                             '_type': '_doc',
+                             },
+                            {'_id': '2',
+                             '_index': 'test',
+                             '_source': {'val': '2'},
+
+                             '_version':  1,
+                             '_primary_term': 1,
+                             'found': True,
+                             '_seq_no': 1,
+                             '_type': '_doc',
+                             }]}
+
+
+@pytest.mark.skip_after_es7
+@pytest.mark.run_loop
+async def test_send_get_body_as_source_none_params_before_es7(es_server,
+                                                              auto_close, loop):
+    cl = auto_close(Elasticsearch([{'host': es_server['host'],
+                                    'port': es_server['port']}],
                                   send_get_body_as='source',
                                   http_auth=es_server['auth'],
                                   loop=loop))

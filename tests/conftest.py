@@ -7,6 +7,7 @@ import elasticsearch
 import pytest
 from aiohttp.test_utils import unused_port
 from docker import from_env as docker_from_env
+from elasticsearch import __version__ as elasticsearch_lib_version
 
 import aioelasticsearch
 
@@ -55,7 +56,10 @@ def pytest_generate_tests(metafunc):
     if 'es_tag' in metafunc.fixturenames:
         tags = set(metafunc.config.option.es_tag)
         if not tags:
-            tags = ['6.0.0']
+            if elasticsearch_lib_version[0] == 6:
+                tags = ['6.0.0']
+            else:
+                tags = ['7.0.0']
         else:
             tags = list(tags)
         metafunc.parametrize("es_tag", tags, scope='session')
@@ -213,22 +217,44 @@ def pytest_pyfunc_call(pyfuncitem):
 
 
 @pytest.fixture
-def populate(es, loop):
+def populate(es, loop, es_major_version):
     async def do(index, doc_type, n, body):
         coros = []
 
         await es.indices.create(index)
 
+        kwargs = {}
+
+        if es_major_version < 7:
+            kwargs['doc_type'] = doc_type
+
         for i in range(n):
             coros.append(
                 es.index(
                     index=index,
-                    doc_type=doc_type,
                     id=str(i),
                     body=body,
+                    **kwargs,
                 ),
             )
 
         await asyncio.gather(*coros, loop=loop)
         await es.indices.refresh()
     return do
+
+
+@pytest.fixture
+def es_major_version():
+    return elasticsearch_lib_version[0]
+
+
+@pytest.fixture(autouse=True)
+def skip_before_es7_marker(request, es_major_version):
+    if request.node.get_closest_marker('skip_before_es7') and es_major_version < 7:
+        pytest.skip('skipping this test for elasticsearch lib versions < 7')
+
+
+@pytest.fixture(autouse=True)
+def skip_after_es7_marker(request, es_major_version):
+    if request.node.get_closest_marker('skip_after_es7') and es_major_version >= 7:
+        pytest.skip('skipping this test for elasticsearch lib versions >= 7')

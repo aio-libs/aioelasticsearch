@@ -15,9 +15,17 @@ aioelasticsearch
 Installation
 ------------
 
+For elasticsearch < 7:
+
 .. code-block:: shell
 
-    pip install aioelasticsearch
+    pip install aioelasticsearch[6]
+
+For elasticsearch >= 7:
+
+.. code-block:: shell
+
+    pip install aioelasticsearch[7]
 
 Usage
 -----
@@ -56,7 +64,7 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
             async with Scan(
                 es,
                 index='index',
-                doc_type='doc_type',
+                doc_type='doc_type',  # omit this for Elasticsearch 7
                 query={},
             ) as scan:
                 print(scan.total)
