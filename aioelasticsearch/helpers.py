@@ -117,7 +117,7 @@ class Scan:
 
     async def _do_scroll(self):
         resp = await self._es.scroll(
-            self._scroll_id,
+            scroll_id=self._scroll_id,
             scroll=self._scroll,
             **self._scroll_kwargs,
         )
