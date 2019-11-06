@@ -144,7 +144,7 @@ async def test_scan_no_index(es):
         size=scroll_size,
     ) as scan:
         assert scan.scroll_id is None
-        assert scan.total['value'] == 0
+        assert scan.total == 0
         cnt = 0
         async for doc in scan:  # noqa
             cnt += 1
