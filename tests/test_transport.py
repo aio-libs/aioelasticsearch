@@ -182,12 +182,16 @@ async def test_send_get_body_as_post(es_server, auto_close, loop):
                              '_source': {'val': '1'},
                              '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 0,
                              'found': True},
                             {'_id': '2',
                              '_index': 'test',
                              '_source': {'val': '2'},
                              '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 1,
                              'found': True}]}
 
 
@@ -212,12 +216,16 @@ async def test_send_get_body_as_source(es_server, auto_close, loop):
                              '_source': {'val': '1'},
                              '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 0,
                              'found': True},
                             {'_id': '2',
                              '_index': 'test',
                              '_source': {'val': '2'},
                              '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 1,
                              'found': True}]}
 
 
@@ -241,12 +249,16 @@ async def test_send_get_body_as_get(es_server, auto_close, loop):
                              '_source': {'val': '1'},
                              '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 0,
                              'found': True},
                             {'_id': '2',
                              '_index': 'test',
                              '_source': {'val': '2'},
                              '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 1,
                              'found': True}]}
 
 
@@ -261,7 +273,7 @@ async def test_send_get_body_as_source_none_params(es_server,
     await cl.create('test', '1', {'val': '1'})
     await cl.create('test', '2', {'val': '2'})
     ret = await cl.transport.perform_request(
-        'GET', 'test/type/_mget',
+        'GET', 'test/_mget',
         body={"docs": [
             {"_id": "1"},
             {"_id": "2"}
@@ -271,12 +283,16 @@ async def test_send_get_body_as_source_none_params(es_server,
                              '_source': {'val': '1'},
                              '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 0,
                              'found': True},
                             {'_id': '2',
                              '_index': 'test',
                              '_source': {'val': '2'},
                              '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 1,
                              'found': True}]}
 
 
