@@ -168,8 +168,8 @@ async def test_send_get_body_as_post(es_server, auto_close, loop):
                                   send_get_body_as='POST',
                                   http_auth=es_server['auth'],
                                   loop=loop))
-    await cl.create('test', 'type', '1', {'val': '1'})
-    await cl.create('test', 'type', '2', {'val': '2'})
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
     ret = await cl.mget(
         {"docs": [
                 {"_id": "1"},
@@ -198,8 +198,8 @@ async def test_send_get_body_as_source(es_server, auto_close, loop):
                                   send_get_body_as='source',
                                   http_auth=es_server['auth'],
                                   loop=loop))
-    await cl.create('test', 'type', '1', {'val': '1'})
-    await cl.create('test', 'type', '2', {'val': '2'})
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
     ret = await cl.mget(
         {"docs": [
                 {"_id": "1"},
@@ -227,8 +227,8 @@ async def test_send_get_body_as_get(es_server, auto_close, loop):
                                    'port': es_server['port']}],
                                   http_auth=es_server['auth'],
                                   loop=loop))
-    await cl.create('test', 'type', '1', {'val': '1'})
-    await cl.create('test', 'type', '2', {'val': '2'})
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
     ret = await cl.mget(
         {"docs": [
                 {"_id": "1"},
@@ -258,8 +258,8 @@ async def test_send_get_body_as_source_none_params(es_server,
                                   send_get_body_as='source',
                                   http_auth=es_server['auth'],
                                   loop=loop))
-    await cl.create('test', 'type', '1', {'val': '1'})
-    await cl.create('test', 'type', '2', {'val': '2'})
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
     ret = await cl.transport.perform_request(
         'GET', 'test/type/_mget',
         body={"docs": [

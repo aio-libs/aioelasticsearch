@@ -55,7 +55,7 @@ async def test_scan_simple(es, populate):
                            '_index': 'test_aioes',
                            '_score': None,
                            '_source': {'foo': 1},
-                           '_type': 'type_2',
+                           '_type': '_doc',
                            'sort': mock.ANY}
 
     assert ids == {str(i) for i in range(10)}
