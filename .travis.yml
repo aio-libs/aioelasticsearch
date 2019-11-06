@@ -15,7 +15,7 @@ after_success:
 cache: pip
 env:
   TOXENV: py
-  ES_TAG: 6.0.0
+  ES_TAG: 7.3.1
 
 jobs:
   fast_finish: true

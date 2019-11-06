@@ -175,7 +175,8 @@ async def test_send_get_body_as_post(es_server, auto_close, loop):
                 {"_id": "1"},
                 {"_id": "2"}
         ]},
-        index='test', doc_type='type')
+        index='test',
+    )
     assert ret == {'docs': [{'_id': '1',
                              '_index': 'test',
                              '_source': {'val': '1'},
@@ -204,7 +205,8 @@ async def test_send_get_body_as_source(es_server, auto_close, loop):
                 {"_id": "1"},
                 {"_id": "2"}
         ]},
-        index='test', doc_type='type')
+        index='test',
+    )
     assert ret == {'docs': [{'_id': '1',
                              '_index': 'test',
                              '_source': {'val': '1'},
@@ -232,7 +234,8 @@ async def test_send_get_body_as_get(es_server, auto_close, loop):
                 {"_id": "1"},
                 {"_id": "2"}
         ]},
-        index='test', doc_type='type')
+        index='test',
+    )
     assert ret == {'docs': [{'_id': '1',
                              '_index': 'test',
                              '_source': {'val': '1'},
