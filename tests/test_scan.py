@@ -48,7 +48,7 @@ async def test_scan_simple(es, populate):
         size=scroll_size,
     ) as scan:
         assert isinstance(scan.scroll_id, str)
-        assert scan.total == 10
+        assert scan.total['value'] == 10
         async for doc in scan:
             ids.add(doc['_id'])
             assert doc == {'_id': mock.ANY,
@@ -91,7 +91,7 @@ async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
                 ids.add(doc['_id'])
 
             # check number of unique doc ids
-            assert len(ids) == n == scan.total
+            assert len(ids) == n == scan.total['value']
 
 
 @pytest.mark.run_loop
@@ -105,7 +105,7 @@ async def test_scan_no_mask_index(es):
         size=scroll_size,
     ) as scan:
         assert scan.scroll_id is None
-        assert scan.total == 0
+        assert scan.total['value'] == 0
         cnt = 0
         async for doc in scan:  # noqa
             cnt += 1
@@ -144,7 +144,7 @@ async def test_scan_no_index(es):
         size=scroll_size,
     ) as scan:
         assert scan.scroll_id is None
-        assert scan.total == 0
+        assert scan.total['value'] == 0
         cnt = 0
         async for doc in scan:  # noqa
             cnt += 1
