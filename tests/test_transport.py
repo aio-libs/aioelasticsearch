@@ -168,25 +168,30 @@ async def test_send_get_body_as_post(es_server, auto_close, loop):
                                   send_get_body_as='POST',
                                   http_auth=es_server['auth'],
                                   loop=loop))
-    await cl.create('test', 'type', '1', {'val': '1'})
-    await cl.create('test', 'type', '2', {'val': '2'})
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
     ret = await cl.mget(
         {"docs": [
                 {"_id": "1"},
                 {"_id": "2"}
         ]},
-        index='test', doc_type='type')
+        index='test',
+    )
     assert ret == {'docs': [{'_id': '1',
                              '_index': 'test',
                              '_source': {'val': '1'},
-                             '_type': 'type',
+                             '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 0,
                              'found': True},
                             {'_id': '2',
                              '_index': 'test',
                              '_source': {'val': '2'},
-                             '_type': 'type',
+                             '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 1,
                              'found': True}]}
 
 
@@ -197,25 +202,30 @@ async def test_send_get_body_as_source(es_server, auto_close, loop):
                                   send_get_body_as='source',
                                   http_auth=es_server['auth'],
                                   loop=loop))
-    await cl.create('test', 'type', '1', {'val': '1'})
-    await cl.create('test', 'type', '2', {'val': '2'})
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
     ret = await cl.mget(
         {"docs": [
                 {"_id": "1"},
                 {"_id": "2"}
         ]},
-        index='test', doc_type='type')
+        index='test',
+    )
     assert ret == {'docs': [{'_id': '1',
                              '_index': 'test',
                              '_source': {'val': '1'},
-                             '_type': 'type',
+                             '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 0,
                              'found': True},
                             {'_id': '2',
                              '_index': 'test',
                              '_source': {'val': '2'},
-                             '_type': 'type',
+                             '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 1,
                              'found': True}]}
 
 
@@ -225,25 +235,30 @@ async def test_send_get_body_as_get(es_server, auto_close, loop):
                                    'port': es_server['port']}],
                                   http_auth=es_server['auth'],
                                   loop=loop))
-    await cl.create('test', 'type', '1', {'val': '1'})
-    await cl.create('test', 'type', '2', {'val': '2'})
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
     ret = await cl.mget(
         {"docs": [
                 {"_id": "1"},
                 {"_id": "2"}
         ]},
-        index='test', doc_type='type')
+        index='test',
+    )
     assert ret == {'docs': [{'_id': '1',
                              '_index': 'test',
                              '_source': {'val': '1'},
-                             '_type': 'type',
+                             '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 0,
                              'found': True},
                             {'_id': '2',
                              '_index': 'test',
                              '_source': {'val': '2'},
-                             '_type': 'type',
+                             '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 1,
                              'found': True}]}
 
 
@@ -255,10 +270,10 @@ async def test_send_get_body_as_source_none_params(es_server,
                                   send_get_body_as='source',
                                   http_auth=es_server['auth'],
                                   loop=loop))
-    await cl.create('test', 'type', '1', {'val': '1'})
-    await cl.create('test', 'type', '2', {'val': '2'})
+    await cl.create('test', '1', {'val': '1'})
+    await cl.create('test', '2', {'val': '2'})
     ret = await cl.transport.perform_request(
-        'GET', 'test/type/_mget',
+        'GET', 'test/_mget',
         body={"docs": [
             {"_id": "1"},
             {"_id": "2"}
@@ -266,14 +281,18 @@ async def test_send_get_body_as_source_none_params(es_server,
     assert ret == {'docs': [{'_id': '1',
                              '_index': 'test',
                              '_source': {'val': '1'},
-                             '_type': 'type',
+                             '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 0,
                              'found': True},
                             {'_id': '2',
                              '_index': 'test',
                              '_source': {'val': '2'},
-                             '_type': 'type',
+                             '_type': '_doc',
                              '_version': 1,
+                             '_primary_term': 1,
+                             '_seq_no': 1,
                              'found': True}]}
 
 

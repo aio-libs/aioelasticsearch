@@ -35,29 +35,27 @@ def test_scan_scroll_id_without_context_manager(es):
 @pytest.mark.run_loop
 async def test_scan_simple(es, populate):
     index = 'test_aioes'
-    doc_type = 'type_2'
     scroll_size = 3
     n = 10
 
     body = {'foo': 1}
-    await populate(index, doc_type, n, body)
+    await populate(index, n, body)
     ids = set()
 
     async with Scan(
         es,
         index=index,
-        doc_type=doc_type,
         size=scroll_size,
     ) as scan:
         assert isinstance(scan.scroll_id, str)
-        assert scan.total == 10
+        assert scan.total['value'] == 10
         async for doc in scan:
             ids.add(doc['_id'])
             assert doc == {'_id': mock.ANY,
                            '_index': 'test_aioes',
                            '_score': None,
                            '_source': {'foo': 1},
-                           '_type': 'type_2',
+                           '_type': '_doc',
                            'sort': mock.ANY}
 
     assert ids == {str(i) for i in range(10)}
@@ -77,17 +75,15 @@ async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
         es_clean()
 
         index = 'test_aioes'
-        doc_type = 'type_1'
         body = {'foo': 1}
 
-        await populate(index, doc_type, n, body)
+        await populate(index, n, body)
 
         ids = set()
 
         async with Scan(
             es,
             index=index,
-            doc_type=doc_type,
             size=scroll_size,
         ) as scan:
 
@@ -95,23 +91,21 @@ async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
                 ids.add(doc['_id'])
 
             # check number of unique doc ids
-            assert len(ids) == n == scan.total
+            assert len(ids) == n == scan.total['value']
 
 
 @pytest.mark.run_loop
 async def test_scan_no_mask_index(es):
     index = 'undefined-*'
-    doc_type = 'any'
     scroll_size = 3
 
     async with Scan(
         es,
         index=index,
-        doc_type=doc_type,
         size=scroll_size,
     ) as scan:
         assert scan.scroll_id is None
-        assert scan.total == 0
+        assert scan.total['value'] == 0
         cnt = 0
         async for doc in scan:  # noqa
             cnt += 1
@@ -121,12 +115,11 @@ async def test_scan_no_mask_index(es):
 @pytest.mark.run_loop
 async def test_scan_no_scroll(es, loop, populate):
     index = 'test_aioes'
-    doc_type = 'type_2'
     n = 10
     scroll_size = 1
     body = {'foo': 1}
 
-    await populate(index, doc_type, n, body)
+    await populate(index, n, body)
 
     async with Scan(
         es,
@@ -143,13 +136,11 @@ async def test_scan_no_scroll(es, loop, populate):
 @pytest.mark.run_loop
 async def test_scan_no_index(es):
     index = 'undefined'
-    doc_type = 'any'
     scroll_size = 3
 
     async with Scan(
         es,
         index=index,
-        doc_type=doc_type,
         size=scroll_size,
     ) as scan:
         assert scan.scroll_id is None
@@ -163,19 +154,17 @@ async def test_scan_no_index(es):
 @pytest.mark.run_loop
 async def test_scan_warning_on_failed_shards(es, populate, mocker):
     index = 'test_aioes'
-    doc_type = 'type_2'
     scroll_size = 3
     n = 10
 
     body = {'foo': 1}
-    await populate(index, doc_type, n, body)
+    await populate(index, n, body)
 
     mocker.spy(logger, 'warning')
 
     async with Scan(
         es,
         index=index,
-        doc_type=doc_type,
         size=scroll_size,
         raise_on_error=False,
     ) as scan:
@@ -194,12 +183,11 @@ async def test_scan_warning_on_failed_shards(es, populate, mocker):
 @pytest.mark.run_loop
 async def test_scan_exception_on_failed_shards(es, populate, mocker):
     index = 'test_aioes'
-    doc_type = 'type_2'
     scroll_size = 3
     n = 10
 
     body = {'foo': 1}
-    await populate(index, doc_type, n, body)
+    await populate(index, n, body)
 
     mocker.spy(logger, 'warning')
 
@@ -207,7 +195,6 @@ async def test_scan_exception_on_failed_shards(es, populate, mocker):
     async with Scan(
         es,
         index=index,
-        doc_type=doc_type,
         size=scroll_size,
     ) as scan:
         with pytest.raises(ScanError) as cm:

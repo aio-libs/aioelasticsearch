@@ -214,7 +214,7 @@ def pytest_pyfunc_call(pyfuncitem):
 
 @pytest.fixture
 def populate(es, loop):
-    async def do(index, doc_type, n, body):
+    async def do(index, n, body):
         coros = []
 
         await es.indices.create(index)
@@ -223,7 +223,6 @@ def populate(es, loop):
             coros.append(
                 es.index(
                     index=index,
-                    doc_type=doc_type,
                     id=str(i),
                     body=body,
                 ),
