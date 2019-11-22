@@ -73,6 +73,13 @@ class AIOHttpConnection(Connection):
             )
             self.close_session = True
 
+    def __eq__(self, other):
+        if not isinstance(other, AIOHttpConnection):
+            raise TypeError(
+                "Unsupported equality check for %s and %s" % (self, other)
+            )
+        return True
+
     async def close(self):
         if self.close_session:
             await self.session.close()
