@@ -21,7 +21,7 @@ class AIOHttpConnection(Connection):
         maxsize=10,
         headers=None,
         *,
-        loop,
+        loop=None,
         **kwargs
     ):
         super().__init__(host=host, port=port, use_ssl=use_ssl, **kwargs)
@@ -31,7 +31,7 @@ class AIOHttpConnection(Connection):
         self.headers = headers
         self.headers.setdefault('Content-Type', 'application/json')
 
-        self.loop = loop
+        self.loop = asyncio.get_event_loop()
 
         if http_auth is not None:
             if isinstance(http_auth, aiohttp.BasicAuth):
@@ -67,7 +67,6 @@ class AIOHttpConnection(Connection):
                 connector=aiohttp.TCPConnector(
                     limit=maxsize,
                     use_dns_cache=kwargs.get('use_dns_cache', False),
-                    loop=self.loop,
                     **kwargs,
                 ),
             )

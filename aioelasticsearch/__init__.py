@@ -23,10 +23,7 @@ class Elasticsearch(_Elasticsearch):
         loop=None,
         **kwargs
     ):
-        if loop is None:
-            loop = asyncio.get_event_loop()
-
-        self.loop = loop
+        self.loop = asyncio.get_event_loop()
 
         kwargs['loop'] = self.loop
 
