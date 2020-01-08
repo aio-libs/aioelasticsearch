@@ -11,23 +11,6 @@ from docker import from_env as docker_from_env
 import aioelasticsearch
 
 
-@pytest.fixture
-def loop(request):
-    asyncio.set_event_loop(None)
-
-    loop = asyncio.new_event_loop()
-
-    yield loop
-
-    if not loop._closed:
-        loop.call_soon(loop.stop)
-        loop.run_forever()
-        loop.close()
-
-    gc.collect()
-    asyncio.set_event_loop(None)
-
-
 @pytest.fixture(scope='session')
 def session_id():
     '''Unique session identifier, random string.'''
@@ -157,21 +140,20 @@ def es_server(es_clean, es_container):
 
 
 @pytest.fixture
-def es(es_server, auto_close, loop):
+def es(es_server, auto_close):
     es = aioelasticsearch.Elasticsearch(
         hosts=[{
             'host': es_server['host'],
             'port': es_server['port'],
         }],
         http_auth=es_server['auth'],
-        loop=loop,
     )
 
     return auto_close(es)
 
 
 @pytest.fixture
-def auto_close(loop):
+def auto_close():
     close_list = []
 
     def f(arg):
@@ -180,40 +162,29 @@ def auto_close(loop):
 
     yield f
 
+    loop = asyncio.get_event_loop()
     for arg in close_list:
         loop.run_until_complete(arg.close())
 
 
 @pytest.mark.tryfirst
-def pytest_pycollect_makeitem(collector, name, obj):
-    if collector.funcnamefilter(name):
-        item = pytest.Function(name, parent=collector)
-
-        if 'run_loop' in item.keywords:
-            return list(collector._genfunctions(name, obj))
-
-
-@pytest.mark.tryfirst
 def pytest_pyfunc_call(pyfuncitem):
-    if 'run_loop' in pyfuncitem.keywords:
+    if asyncio.iscoroutinefunction(pyfuncitem.obj):
         funcargs = pyfuncitem.funcargs
-
-        loop = funcargs['loop']
 
         testargs = {
             arg: funcargs[arg]
             for arg in pyfuncitem._fixtureinfo.argnames
         }
 
-        assert asyncio.iscoroutinefunction(pyfuncitem.obj)
-
+        loop = asyncio.get_event_loop()
         loop.run_until_complete(pyfuncitem.obj(**testargs))
 
         return True
 
 
 @pytest.fixture
-def populate(es, loop):
+def populate(es):
     async def do(index, n, body):
         coros = []
 
@@ -228,6 +199,6 @@ def populate(es, loop):
                 ),
             )
 
-        await asyncio.gather(*coros, loop=loop)
+        await asyncio.gather(*coros)
         await es.indices.refresh()
     return do

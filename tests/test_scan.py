@@ -16,7 +16,6 @@ def test_scan_total_without_context_manager(es):
         scan.total
 
 
-@pytest.mark.run_loop
 async def test_scan_async_for_without_context_manager(es):
     scan = Scan(es)
 
@@ -32,7 +31,6 @@ def test_scan_scroll_id_without_context_manager(es):
         scan.scroll_id
 
 
-@pytest.mark.run_loop
 async def test_scan_simple(es, populate):
     index = 'test_aioes'
     scroll_size = 3
@@ -61,7 +59,6 @@ async def test_scan_simple(es, populate):
     assert ids == {str(i) for i in range(10)}
 
 
-@pytest.mark.run_loop
 async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
     for n, scroll_size in [
         (0, 1),  # no results
@@ -94,7 +91,6 @@ async def test_scan_equal_chunks_for_loop(es, es_clean, populate):
             assert len(ids) == n == scan.total['value']
 
 
-@pytest.mark.run_loop
 async def test_scan_no_mask_index(es):
     index = 'undefined-*'
     scroll_size = 3
@@ -112,8 +108,7 @@ async def test_scan_no_mask_index(es):
         assert cnt == 0
 
 
-@pytest.mark.run_loop
-async def test_scan_no_scroll(es, loop, populate):
+async def test_scan_no_scroll(es, populate):
     index = 'test_aioes'
     n = 10
     scroll_size = 1
@@ -133,7 +128,6 @@ async def test_scan_no_scroll(es, loop, populate):
                 doc
 
 
-@pytest.mark.run_loop
 async def test_scan_no_index(es):
     index = 'undefined'
     scroll_size = 3
@@ -151,7 +145,6 @@ async def test_scan_no_index(es):
         assert cnt == 0
 
 
-@pytest.mark.run_loop
 async def test_scan_warning_on_failed_shards(es, populate, mocker):
     index = 'test_aioes'
     scroll_size = 3
@@ -180,7 +173,6 @@ async def test_scan_warning_on_failed_shards(es, populate, mocker):
         'Scroll request has only succeeded on %d shards out of %d.', 4, 5)
 
 
-@pytest.mark.run_loop
 async def test_scan_exception_on_failed_shards(es, populate, mocker):
     index = 'test_aioes'
     scroll_size = 3

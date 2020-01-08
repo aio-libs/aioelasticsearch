@@ -20,7 +20,7 @@ class AIOHttpConnectionPool:
         selector_class=RoundRobinSelector,
         randomize_hosts=True,
         *,
-        loop,
+        loop=None,
         **kwargs
     ):
         self._dead_timeout = dead_timeout
@@ -28,10 +28,10 @@ class AIOHttpConnectionPool:
         self.connection_opts = connections
         self.connections = [c for (c, _) in connections]
         self.orig_connections = set(self.connections)
-        self.dead = asyncio.PriorityQueue(len(self.connections), loop=loop)
+        self.dead = asyncio.PriorityQueue(len(self.connections))
         self.dead_count = collections.Counter()
 
-        self.loop = loop
+        self.loop = asyncio.get_event_loop()
 
         if randomize_hosts:
             random.shuffle(self.connections)
@@ -111,18 +111,18 @@ class AIOHttpConnectionPool:
             self.orig_connections - skip
         ]
 
-        await asyncio.gather(*coros, loop=self.loop)
+        await asyncio.gather(*coros)
 
 
 class DummyConnectionPool(AIOHttpConnectionPool):
 
-    def __init__(self, connections, *, loop, **kwargs):
+    def __init__(self, connections, *, loop=None, **kwargs):
         if len(connections) != 1:
             raise ImproperlyConfigured(
                 'DummyConnectionPool needs exactly one connection defined.',
             )
 
-        self.loop = loop
+        self.loop = asyncio.get_event_loop()
 
         self.connection_opts = connections
         self.connection = connections[0][0]
