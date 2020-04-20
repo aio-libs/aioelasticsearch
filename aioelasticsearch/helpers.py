@@ -134,7 +134,7 @@ class Scan:
             )
 
     def _update_state(self, resp):
-        self._hits = resp['hits']['hits']
+        self._hits = resp['hits'].get('hits', [])
         self._hits_idx = 0
         self._scroll_id = resp.get('_scroll_id')
         self._successful_shards = resp['_shards']['successful']
