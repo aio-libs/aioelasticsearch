@@ -88,12 +88,12 @@ class AIOHttpConnection(Connection):
                 **kwargs,
             )
 
-            self.session = self._session_factory(**{
-                'auth': self.http_auth,
-                'loop': self.loop,
-                'ssl': ssl_context if self.verify_certs else False,
-                'limit': maxsize,
-            })
+            self.session = self._session_factory(
+                auth=self.http_auth,
+                loop=self.loop,
+                ssl=ssl_context if self.verify_certs else False,
+                limit=maxsize,
+            )
 
             self.close_session = True
 
