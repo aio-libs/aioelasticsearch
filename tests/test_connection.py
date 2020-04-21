@@ -82,6 +82,12 @@ async def test_explicit_session_not_closed(loop):
 
 
 @pytest.mark.run_loop
+async def test_default_session(auto_close, loop):
+    conn = auto_close(AIOHttpConnection(loop=loop))
+    assert isinstance(conn.session, aiohttp.ClientSession)
+
+
+@pytest.mark.run_loop
 async def test_session_closed(loop):
     conn = AIOHttpConnection(loop=loop)
     await conn.close()
