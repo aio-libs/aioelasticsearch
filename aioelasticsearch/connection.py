@@ -8,7 +8,7 @@ from elasticsearch.connection import Connection  # noqa # isort:skip
 from yarl import URL  # noqa # isort:skip
 
 
-class DefaultSessionFactory:
+class SessionFactory:
 
     def __init__(self, **kwargs):
         self.kwargs = kwargs
@@ -44,7 +44,7 @@ class AIOHttpConnection(Connection):
         verify_certs=False,
         maxsize=10,
         headers=None,
-        session_factory_class=DefaultSessionFactory,
+        session_factory_class=SessionFactory,
         *,
         loop,
         **kwargs
