@@ -8,28 +8,18 @@ from elasticsearch.connection import Connection  # noqa # isort:skip
 from yarl import URL  # noqa # isort:skip
 
 
-class SessionFactory:
+def session_factory(**kwargs):
+    connector = aiohttp.TCPConnector(
+        loop=kwargs.get('loop'),
+        limit=kwargs.get('limit', 10),
+        use_dns_cache=kwargs.get('use_dns_cache', False),
+        ssl=kwargs.get('ssl', False),
+    )
 
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-
-        def _cls(**kwargs):
-            connector = aiohttp.TCPConnector(
-                loop=kwargs.get('loop'),
-                limit=kwargs.get('limit', 10),
-                use_dns_cache=kwargs.get('use_dns_cache', False),
-                ssl=kwargs.get('ssl', False),
-            )
-
-            return aiohttp.ClientSession(
-                auth=kwargs.get('auth'),
-                connector=connector,
-            )
-
-        self.cls = _cls
-
-    def __call__(self, **kwargs):
-        return self.cls(**{**self.kwargs, **kwargs})
+    return aiohttp.ClientSession(
+        auth=kwargs.get('auth'),
+        connector=connector,
+    )
 
 
 class AIOHttpConnection(Connection):
@@ -44,7 +34,7 @@ class AIOHttpConnection(Connection):
         verify_certs=False,
         maxsize=10,
         headers=None,
-        session_factory_class=SessionFactory,
+        session_factory=session_factory,
         *,
         loop,
         **kwargs
@@ -84,15 +74,14 @@ class AIOHttpConnection(Connection):
 
         if self.session is None:
 
-            self._session_factory = session_factory_class(
-                **kwargs,
-            )
+            self._session_factory = session_factory
 
             self.session = self._session_factory(
                 auth=self.http_auth,
                 loop=self.loop,
                 ssl=ssl_context if self.verify_certs else False,
                 limit=maxsize,
+                use_dns_cache=kwargs.get('use_dns_cache', False),
             )
 
             self.close_session = True
