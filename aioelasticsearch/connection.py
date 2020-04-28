@@ -34,11 +34,15 @@ class AIOHttpConnection(Connection):
         verify_certs=False,
         maxsize=10,
         headers=None,
-        session_factory=session_factory,
         *,
         loop,
         **kwargs
     ):
+        assert not(
+            kwargs.get('session') and
+            kwargs.get('session_factory')
+        ), 'Provide `session` or `session_factory`, not both.'
+
         super().__init__(host=host, port=port, use_ssl=use_ssl, **kwargs)
 
         if headers is None:
@@ -74,7 +78,10 @@ class AIOHttpConnection(Connection):
 
         if self.session is None:
 
-            self._session_factory = session_factory
+            self._session_factory = kwargs.get(
+                'session_factory',
+                session_factory,
+            )
 
             self.session = self._session_factory(
                 auth=self.http_auth,
