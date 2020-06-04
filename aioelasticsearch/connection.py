@@ -8,6 +8,20 @@ from elasticsearch.connection import Connection  # noqa # isort:skip
 from yarl import URL  # noqa # isort:skip
 
 
+def session_factory(**kwargs):
+    connector = aiohttp.TCPConnector(
+        loop=kwargs.get('loop'),
+        limit=kwargs.get('limit', 10),
+        use_dns_cache=kwargs.get('use_dns_cache', False),
+        ssl=kwargs.get('ssl', False),
+    )
+
+    return aiohttp.ClientSession(
+        auth=kwargs.get('auth'),
+        connector=connector,
+    )
+
+
 class AIOHttpConnection(Connection):
 
     def __init__(
@@ -24,6 +38,11 @@ class AIOHttpConnection(Connection):
         loop,
         **kwargs
     ):
+        assert not(
+            kwargs.get('session') and
+            kwargs.get('session_factory')
+        ), 'Provide `session` or `session_factory`, not both.'
+
         super().__init__(host=host, port=port, use_ssl=use_ssl, **kwargs)
 
         if headers is None:
@@ -56,21 +75,22 @@ class AIOHttpConnection(Connection):
 
         self.session = kwargs.get('session')
         self.close_session = False
+
         if self.session is None:
-            kwargs = {}
-            if not self.verify_certs:
-                kwargs['ssl'] = False
-            else:
-                kwargs['ssl'] = ssl_context
-            self.session = aiohttp.ClientSession(
-                auth=self.http_auth,
-                connector=aiohttp.TCPConnector(
-                    limit=maxsize,
-                    use_dns_cache=kwargs.get('use_dns_cache', False),
-                    loop=self.loop,
-                    **kwargs,
-                ),
+
+            self._session_factory = kwargs.get(
+                'session_factory',
+                session_factory,
             )
+
+            self.session = self._session_factory(
+                auth=self.http_auth,
+                loop=self.loop,
+                ssl=ssl_context if self.verify_certs else False,
+                limit=maxsize,
+                use_dns_cache=kwargs.get('use_dns_cache', False),
+            )
+
             self.close_session = True
 
     async def close(self):
