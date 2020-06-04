@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.7.0 (2019-11-07)
+------------------
+
+- Support ``ession_factory_class`` by ``AIOHttpConnection`` (#211)
+
 0.6.0 (2019-11-07)
 ------------------
 
