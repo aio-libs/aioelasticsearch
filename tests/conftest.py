@@ -98,7 +98,7 @@ def es_container(docker, session_id, es_tag, request):
         docker_host = inspection['NetworkSettings']['IPAddress']
 
     delay = 0.1
-    for i in range(20):
+    for _ in range(20):
         es = elasticsearch.Elasticsearch(
             [{
                 'host': docker_host,

@@ -1,5 +1,7 @@
 import pytest
 
+from time import time
+
 from aioelasticsearch import (AIOHttpTransport, ConnectionError,
                               ConnectionTimeout, Elasticsearch, TransportError)
 from aioelasticsearch.connection import AIOHttpConnection
@@ -356,8 +358,12 @@ async def test_request_connection_error(loop, auto_close):
                          exception=exc)
     auto_close(t)
 
+    time_start = time()
+
     with pytest.raises(ConnectionError):
         await t.perform_request('GET', '/')
+
+    assert 3.97 < time() - time_start < 4.03
 
     conn = await t.get_connection()
     assert len(conn.calls) == 3
