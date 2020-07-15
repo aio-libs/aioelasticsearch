@@ -150,6 +150,7 @@ class CompositeAggregationScan:
         self,
         es,
         query,
+        loop=None,
         raise_on_error=True,
         prefetch_next_chunk=False,
         **kwargs,
@@ -159,6 +160,11 @@ class CompositeAggregationScan:
         self._raise_on_error = raise_on_error
         self._prefetch_next_chunk = prefetch_next_chunk
         self._kwargs = kwargs
+
+        if loop is None:
+            loop = asyncio.get_event_loop()
+
+        self._loop = loop
 
         self._aggs_key = self._extract_aggs_key()
 
@@ -265,7 +271,7 @@ class CompositeAggregationScan:
         self._update_state(resp)
 
         if self._prefetch_next_chunk:
-            self._prefetched = asyncio.create_task(
+            self._prefetched = self._loop.create_task(
                 self._search(),
             )
 

@@ -68,6 +68,43 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
     loop.run_until_complete(go())
     loop.close()
 
+Asynchronous `scroll for composite aggregation <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-composite-aggregation.html#_pagination>`_.
+
+.. code-block:: python
+
+    import asyncio
+
+    from aioelasticsearch import Elasticsearch
+    from aioelasticsearch.helpers import CompositeAggregationScan
+
+    QUERY = {
+        'aggs': {
+            'buckets': {
+                'composite': {
+                    'sources': [
+                        {'score': {'terms': {'field': 'score.keyword'}}},
+                    ],
+                    'size': 5,
+                },
+            },
+        },
+    }
+
+    async def go():
+        async with Elasticsearch() as es:
+            async with CompositeAggregationScan(
+                es,
+                QUERY,
+                index='index',
+            ) as scan:
+
+                async for doc in scan:
+                    print(doc['doc_count'], doc['key'])
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(go())
+    loop.close()
+
 Thanks
 ------
 

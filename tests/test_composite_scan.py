@@ -113,12 +113,13 @@ async def test_non_composite_aggregation(es):
 
 
 @pytest.mark.run_loop
-async def test_scan(es, populate_aggs_data):
+async def test_scan(loop, es, populate_aggs_data):
     await populate_aggs_data(INDEX, ES_DATA)
 
     async with CompositeAggregationScan(
         es,
         QUERY,
+        loop=loop,
         index=INDEX,
     ) as scan:
         i = 1
@@ -134,12 +135,13 @@ async def test_scan(es, populate_aggs_data):
 
 
 @pytest.mark.run_loop
-async def test_scan_no_index(es, populate_aggs_data):
+async def test_scan_no_index(loop, es, populate_aggs_data):
     await populate_aggs_data(INDEX, ES_DATA)
 
     async with CompositeAggregationScan(
         es,
         QUERY,
+        loop=loop,
     ) as scan:
         i = 1
         async for doc in scan:
@@ -154,7 +156,7 @@ async def test_scan_no_index(es, populate_aggs_data):
 
 
 @pytest.mark.run_loop
-async def test_scan_multiple_fetch(es, populate_aggs_data):
+async def test_scan_multiple_fetch(loop, es, populate_aggs_data):
     await populate_aggs_data(INDEX, ES_DATA)
 
     q = deepcopy(QUERY)
@@ -163,6 +165,7 @@ async def test_scan_multiple_fetch(es, populate_aggs_data):
     async with CompositeAggregationScan(
         es,
         q,
+        loop=loop,
         index=INDEX,
     ) as scan:
         i = 1
@@ -182,7 +185,7 @@ async def test_scan_multiple_fetch(es, populate_aggs_data):
 
 
 @pytest.mark.run_loop
-async def test_scan_with_prefetch_next(es, populate_aggs_data):
+async def test_scan_with_prefetch_next(loop, es, populate_aggs_data):
     await populate_aggs_data(INDEX, ES_DATA)
 
     q = deepcopy(QUERY)
@@ -191,6 +194,7 @@ async def test_scan_with_prefetch_next(es, populate_aggs_data):
     async with CompositeAggregationScan(
         es,
         q,
+        loop=loop,
         prefetch_next_chunk=True,
         index=INDEX,
     ) as scan:
@@ -218,6 +222,7 @@ async def test_scan_with_prefetch_next(es, populate_aggs_data):
 
 @pytest.mark.run_loop
 async def test_scan_warning_on_failed_shards(
+    loop,
     es,
     populate_aggs_data,
     mocker,
@@ -229,6 +234,7 @@ async def test_scan_warning_on_failed_shards(
     async with CompositeAggregationScan(
         es,
         QUERY,
+        loop=loop,
         raise_on_error=False,
         index=INDEX,
     ) as scan:
@@ -248,6 +254,7 @@ async def test_scan_warning_on_failed_shards(
 
 @pytest.mark.run_loop
 async def test_scan_exception_on_failed_shards(
+    loop,
     es,
     populate_aggs_data,
     mocker,
@@ -259,6 +266,7 @@ async def test_scan_exception_on_failed_shards(
     async with CompositeAggregationScan(
         es,
         QUERY,
+        loop=loop,
         index=INDEX,
     ) as scan:
         i = 0
