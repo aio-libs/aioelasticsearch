@@ -153,7 +153,7 @@ class CompositeAggregationScan:
         loop=None,
         raise_on_error=True,
         prefetch_next_chunk=False,
-        **kwargs,
+        **kwargs
     ):
         self._es = es
         self._query = deepcopy(query)
