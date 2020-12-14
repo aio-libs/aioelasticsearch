@@ -4,7 +4,7 @@ flake8==3.8.4
 ipdb==0.13.4
 ipython==7.19.0
 pytest==6.2.0
-pytest-cov==2.8.1
+pytest-cov==2.10.1
 pytest-mock==1.11.1
 tox==3.14.0
 docker==4.1.0
