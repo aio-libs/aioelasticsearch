@@ -1,10 +1,12 @@
 import asyncio
 import ssl
 from unittest import mock
+from urllib.parse import unquote
 
 import aiohttp
 import pytest
 from elasticsearch import ConnectionTimeout
+from elasticsearch.client.utils import _make_path
 
 from aioelasticsearch.connection import (AIOHttpConnection, ConnectionError,
                                          SSLError)
@@ -114,3 +116,23 @@ async def test_perform_request_ssl_error(auto_close, loop):
                                             use_ssl=True))
         with pytest.raises(expected):
             await conn.perform_request('HEAD', '/')
+
+
+@pytest.mark.run_loop
+async def test_path_encoding(loop):
+    class StopProcessing(Exception):
+        pass
+
+    class DummyClientSession(object):
+        def request(self, method, url, **kwargs):
+            raise StopProcessing(unquote(url.path))
+
+    conn = AIOHttpConnection(session=DummyClientSession(), loop=loop)
+
+    for id in ("123abc", "123+abc", "123%4"):
+        path = _make_path("index", "_doc", id)
+
+        with pytest.raises(StopProcessing) as sp:
+            await conn.perform_request("GET", path)
+
+        assert id == str(sp.value).split("/")[-1]
