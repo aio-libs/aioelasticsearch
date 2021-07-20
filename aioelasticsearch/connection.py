@@ -35,7 +35,7 @@ class AIOHttpConnection(Connection):
         maxsize=10,
         headers=None,
         *,
-        loop,
+        loop=None,
         **kwargs
     ):
         assert not(
@@ -50,6 +50,8 @@ class AIOHttpConnection(Connection):
         self.headers = headers
         self.headers.setdefault('Content-Type', 'application/json')
 
+        if loop is None:
+            loop = asyncio.get_event_loop()
         self.loop = loop
 
         if http_auth is not None:

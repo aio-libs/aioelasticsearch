@@ -20,7 +20,7 @@ class AIOHttpConnectionPool:
         selector_class=RoundRobinSelector,
         randomize_hosts=True,
         *,
-        loop,
+        loop=None,
         **kwargs
     ):
         self._dead_timeout = dead_timeout
@@ -31,6 +31,8 @@ class AIOHttpConnectionPool:
         self.dead = asyncio.PriorityQueue(len(self.connections), loop=loop)
         self.dead_count = collections.Counter()
 
+        if loop is None:
+            loop = asyncio.get_event_loop()
         self.loop = loop
 
         if randomize_hosts:
@@ -122,6 +124,8 @@ class DummyConnectionPool(AIOHttpConnectionPool):
                 'DummyConnectionPool needs exactly one connection defined.',
             )
 
+        if loop is None:
+            loop = asyncio.get_event_loop()
         self.loop = loop
 
         self.connection_opts = connections

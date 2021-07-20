@@ -1,5 +1,3 @@
-import asyncio
-
 from elasticsearch import Elasticsearch as _Elasticsearch  # noqa # isort:skip
 from elasticsearch.connection_pool import (ConnectionSelector, # noqa # isort:skip
                                            RoundRobinSelector)
@@ -23,12 +21,8 @@ class Elasticsearch(_Elasticsearch):
         loop=None,
         **kwargs
     ):
-        if loop is None:
-            loop = asyncio.get_event_loop()
-
-        self.loop = loop
-
-        kwargs['loop'] = self.loop
+        if loop is not None:
+            kwargs['loop'] = loop
 
         super().__init__(hosts, transport_class=transport_class, **kwargs)
 

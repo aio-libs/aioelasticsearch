@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from itertools import chain, count
 
 from elasticsearch.serializer import (DEFAULT_SERIALIZERS, Deserializer,
@@ -34,9 +35,15 @@ class AIOHttpTransport(Transport):
         retry_on_timeout=False,
         send_get_body_as='GET',
         *,
-        loop,
+        loop=None,
         **kwargs
     ):
+        if loop is not None:
+            warnings.warn(
+                "loop argument is deprecated", DeprecationWarning, stacklevel=2
+            )
+        else:
+            loop = asyncio.get_event_loop()
         self.loop = loop
         self._closed = False
 
@@ -71,7 +78,7 @@ class AIOHttpTransport(Transport):
         # store all strategies...
         self.connection_pool_class = connection_pool_class
         self.connection_class = connection_class
-        self._connection_pool_lock = asyncio.Lock(loop=self.loop)
+        self._connection_pool_lock = asyncio.Lock()
 
         # ...save kwargs to be passed to the connections
         self.kwargs = kwargs
