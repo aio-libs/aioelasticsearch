@@ -1,4 +1,4 @@
-aiohttp==3.7.4
+aiohttp==3.8.0
 attrs==19.2.0
 flake8==3.7.8
 ipdb==0.12.2
