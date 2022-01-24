@@ -1,7 +1,7 @@
 aiohttp==3.8.1
 attrs==21.4.0
 flake8==4.0.1
-ipdb==0.12.2
+ipdb==0.13.9
 ipython==7.16.3
 pytest==5.2.1
 pytest-cov==2.8.1
