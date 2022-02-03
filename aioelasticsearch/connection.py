@@ -68,7 +68,7 @@ class AIOHttpConnection(Connection):
 
         self.verify_certs = verify_certs
 
-        self.base_url = URL.build(scheme='https' if self.use_ssl else 'http',
+        self.base_url = URL.build(scheme='https' if use_ssl else 'http',
                                   host=host,
                                   port=port,
                                   path=self.url_prefix)
