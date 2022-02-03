@@ -246,12 +246,19 @@ class AIOHttpTransport(Transport):
     async def _perform_request(
         self,
         method, url, params, body,
-        ignore=(), timeout=None, headers=None,
+        backoff_coef, max_backoff,
+        ignore=(), timeout=None, headers=None
     ):
         for attempt in count(1):  # pragma: no branch
             connection = await self.get_connection()
 
             try:
+                # Add a delay before attempting the next retry
+                # 0, 1, 3, 7, etc... by default.
+                # Stop increasing delay at max_backoff
+                delay = min(backoff_coef ** (attempt - 1) - 1, max_backoff)
+                if delay:
+                    await asyncio.sleep(delay, loop=self.loop)
 
                 status, headers, data = await connection.perform_request(
                     method, url, params, body,
@@ -328,13 +335,18 @@ class AIOHttpTransport(Transport):
 
         ignore = ()
         timeout = None
+        backoff_coef = 2.0
+        max_backoff = 120.0
         if params:
-            timeout = params.pop('request_timeout', None)
-            ignore = params.pop('ignore', ())
+            ignore = params.pop('ignore', ignore)
+            timeout = params.pop('request_timeout', timeout)
+            backoff_coef = params.pop('backoff_coef', backoff_coef)
+            max_backoff = params.pop('max_backoff', max_backoff)
             if isinstance(ignore, int):
                 ignore = (ignore, )
 
         return await self._perform_request(
             method, url, params, body,
-            ignore=ignore, timeout=timeout, headers=headers,
+            backoff_coef, max_backoff,
+            ignore=ignore, timeout=timeout, headers=headers
         )
