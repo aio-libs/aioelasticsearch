@@ -109,7 +109,7 @@ class AIOHttpConnection(Connection):
     ):
         url_path = url
 
-        url = (self.base_url / url.lstrip('/')).with_query(params)
+        url = self.base_url.join(URL.build(path=url.lstrip('/'), encoded=True)).with_query(params)
 
         start = self.loop.time()
         try:
