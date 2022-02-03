@@ -12,6 +12,24 @@ aioelasticsearch
 .. image:: https://codecov.io/gh/aio-libs/aioelasticsearch/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/aio-libs/aioelasticsearch
 
+Getting Started
+---------------
+
+Aioelasticsearch - is an asynchronous elasticsearch python client wrapper.
+
+Prerequisites
+-------------
+
+Running Elasticsearch server is required.
+
+Run it with docker (Linux/MAC):
+
+.. code-block:: shell
+
+    docker run -p 9200:9200 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.0.0
+    
+read more in `CONTRIBUTE.rst <./CONTRIBUTE.rst>`_
+
 Installation
 ------------
 
@@ -67,6 +85,11 @@ Asynchronous `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/cu
     loop = asyncio.get_event_loop()
     loop.run_until_complete(go())
     loop.close()
+
+Running the tests
+-----------------
+
+Enter *pytest* and *tox* in project directory for run tests.
 
 Thanks
 ------
