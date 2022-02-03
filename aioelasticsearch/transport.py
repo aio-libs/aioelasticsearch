@@ -71,7 +71,7 @@ class AIOHttpTransport(Transport):
         # store all strategies...
         self.connection_pool_class = connection_pool_class
         self.connection_class = connection_class
-        self._connection_pool_lock = asyncio.Lock(loop=self.loop)
+        self._connection_pool_lock = asyncio.Lock()
 
         # ...save kwargs to be passed to the connections
         self.kwargs = kwargs
@@ -219,7 +219,7 @@ class AIOHttpTransport(Transport):
 
         coros.append(self.connection_pool.close())
 
-        await asyncio.gather(*coros, loop=self.loop)
+        await asyncio.gather(*coros)
         self._closed = True
 
     async def get_connection(self):
